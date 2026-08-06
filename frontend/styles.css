@@ -1,0 +1,259 @@
+/*
+ * FlowPy - Arka Plan Stilleri
+ * 
+ * Bu dosya, sitenin arka plan görselleştirmesi için gerekli stilleri içerir.
+ * 
+ * Düzenleme Notları:
+ * - .background-logo: Arka plan logosunun ayarları
+ * - .top-bar: Üst çubuğun ayarları
+ * - .header-logo-img: Sol üst logosunun ayarları
+ * - .nav-link: Navigasyon linklerinin stilleri
+ * - #networkCanvas: Ağ görselleştirmesinin ayarları
+ */
+
+/* Temel Ayarlar */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: #ffffff; /* Beyaz arka plan */
+    font-family: Arial, sans-serif;
+}
+
+/* Canvas - tüm ekranı kaplar, logonun arkasında */
+#networkCanvas {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* Ağlar bu katmanda - logonun arkasında */
+}
+
+/* Arka plan logosu - tam ortada, orta boyut */
+.background-logo {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2; /* Ağların önünde */
+    opacity: 0.9; /* Görünür */
+    pointer-events: none; /* Mouse etkileşimini engelleme */
+    max-width: 500px; /* Orta boyut */
+    width: 50%; /* Ekran genişliğinin %50'si */
+    height: auto;
+    /* Filter yok - orijinal renkler korunuyor */
+}
+
+/* Üst çubuk - turuncu */
+.top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px; /* Çok ince */
+    background: #f59e0b; /* Turuncu */
+    z-index: 1000; /* En üstte */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Hafif gölge */
+}
+
+.header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+}
+
+/* Sol: Logo */
+.header-left {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.header-logo-img {
+    height: 50px; /* Daha büyük ve görünür */
+    width: auto;
+    /* Filter yok - orijinal renkler korunuyor */
+}
+
+/* Orta: Arama çubuğu */
+.header-center {
+    flex: 1;
+    max-width: 400px;
+    margin: 0 30px;
+}
+
+.search-container {
+    position: relative;
+    width: 100%;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 18px;
+    font-size: 14px;
+    border: none;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+}
+
+.search-input::placeholder {
+    color: #999;
+}
+
+/* Arama sonuçları */
+.search-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    display: none;
+    z-index: 1001;
+}
+
+.search-results.active {
+    display: block;
+}
+
+.search-result-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s ease;
+    color: #333;
+    font-size: 13px;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background: #f59e0b;
+    color: white;
+}
+
+/* Sağ: Bölümler */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    flex-shrink: 0;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 0;
+    position: relative;
+    transition: opacity 0.3s ease;
+    letter-spacing: 0.5px;
+}
+
+.nav-link:hover {
+    opacity: 0.9;
+}
+
+/* Alt çizgi - aktif bölüm */
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px; /* İnce çizgi */
+    background: white;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+    transform: scaleX(1);
+}
+
+/* Responsive - mobil cihazlar */
+@media (max-width: 768px) {
+    .header-content {
+        padding: 0 15px;
+    }
+    
+    .header-logo-img {
+        height: 28px;
+    }
+    
+    .header-center {
+        margin: 0 15px;
+        max-width: 200px;
+    }
+    
+    .search-input {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+    
+    .header-right {
+        gap: 15px;
+    }
+    
+    .nav-link {
+        font-size: 12px;
+    }
+    
+    .background-logo {
+        width: 70%;
+        max-width: 350px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-logo-img {
+        height: 25px;
+    }
+    
+    .header-center {
+        max-width: 150px;
+        margin: 0 10px;
+    }
+    
+    .search-input {
+        padding: 7px 12px;
+        font-size: 12px;
+    }
+    
+    .header-right {
+        gap: 10px;
+    }
+    
+    .nav-link {
+        font-size: 11px;
+    }
+    
+    .background-logo {
+        width: 80%;
+        max-width: 280px;
+    }
+}

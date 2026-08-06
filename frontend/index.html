@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowPy</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Arka plan ağ görselleştirmesi -->
+    <canvas id="networkCanvas"></canvas>
+    
+    <!-- Arka plan logosu - tam ortada -->
+    <img src="Assets/Logo/ArkaPlanLogo.png" alt="FlowPy" class="background-logo" id="bgLogo">
+    
+    <!-- Üst çubuk -->
+    <header class="top-bar">
+        <div class="header-content">
+            <!-- Sol: Yazılı Logo -->
+            <div class="header-left">
+                <img src="Assets/Logo/yazili_logo.png" alt="FlowPy" class="header-logo-img">
+            </div>
+            
+            <!-- Orta: Arama çubuğu -->
+            <div class="header-center">
+                <div class="search-container" id="searchContainer">
+                    <input type="text" 
+                           id="searchInput" 
+                           class="search-input" 
+                           placeholder="Bölüm araştır..."
+                           autocomplete="off">
+                    <div class="search-results" id="searchResults"></div>
+                </div>
+            </div>
+            
+            <!-- Sağ: Bölümler -->
+            <nav class="header-right">
+                <a href="#home" class="nav-link">Ana Sayfa</a>
+<a href="#executer" class="nav-link">Derleyici</a>
+                <a href="#about" class="nav-link">Hakkımızda</a>
+                <a href="#faq" class="nav-link">SSS</a>
+            </nav>
+        </div>
+    </header>
+    
+    <script src="script.js"></script>
+</body>
+</html>
