@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /Assets/
+Sitemap: https://flowpy.app/sitemap.xml

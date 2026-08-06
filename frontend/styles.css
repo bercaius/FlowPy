@@ -99,13 +99,14 @@ body.dark-mode {
     max-width: 500px; /* Orta boyut */
     width: 50%; /* Ekran genişliğinin %50'si */
     height: auto;
-    transition: opacity 0.5s ease; /* Yumuşak solma */
+    transition: opacity 0.8s ease; /* Yumuşak geçiş */
     /* Filter yok - orijinal renkler korunuyor */
 }
 
-/* FlowPy bölümü dışında logo solsun */
+/* FlowPy bölümü dışında logo çok zayıf görünsün */
 body:not(.on-flowpy) .background-logo {
-    opacity: 0.1; /* Çok soluk */
+    opacity: 0.05;
+    pointer-events: none;
 }
 
 /* Üst çubuk - turuncu */
@@ -287,9 +288,9 @@ body.dark-mode #networkCanvas {
     /* Canvas ağı koyu temada da gözüksün */
 }
 
-body.dark-mode .background-logo {
-    /* Logo koyu temada da görünür */
+body.dark-mode .on-flowpy .background-logo {
     opacity: 0.9;
+    filter: brightness(0) invert(1);
 }
 
 body.dark-mode .section-content h2 {
@@ -346,18 +347,18 @@ body.dark-mode .section {
 }
 
 .section {
-    min-height: 100vh; /* Her bölüm tam ekran */
+    min-height: 100vh;
     display: flex;
-    align-items: flex-end; /* Alt çizginin altına yapıştır */
+    align-items: flex-start;
     justify-content: center;
-    padding: 40px 20px 80px 20px; /* Altına daha fazla boşluk */
-    border-bottom: 1px solid #f59e0b; /* Turuncu ayırıcı */
+    padding: 120px 20px 80px 20px;
+    border-bottom: 1px solid #f59e0b;
 }
 
 /* FlowPy bölümü - sadece arka plan */
 .section-flowpy {
     min-height: 100vh;
-    background: transparent; /* Arka plan görünsün */
+    background: transparent;
     border-bottom: none;
 }
 
@@ -495,21 +496,246 @@ body.dark-mode .section {
     max-width: 800px;
 }
 
-.about-link {
-    color: #f59e0b;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.about-link:hover {
-    text-decoration: underline;
-}
-
 body.dark-mode .about-text {
     color: #ccc;
 }
 
-/* FAQ Accordion */
+/* Stüdyo URL Göstergesi */
+.studio-url {
+    display: inline-flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 25px;
+    padding: 18px 28px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    border: 2px solid #f59e0b;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.studio-url:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+body.dark-mode .studio-url {
+    background: rgba(40, 40, 40, 0.9);
+}
+
+.studio-url-logo {
+    height: 45px;
+    width: auto;
+    border-radius: 8px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.studio-url-link {
+    color: #f59e0b;
+    text-decoration: none;
+    font-size: 17px;
+    font-weight: 600;
+    word-break: break-all;
+    transition: color 0.2s ease;
+}
+
+.studio-url-link:hover {
+    color: #d97706;
+    text-decoration: underline;
+}
+
+/* Ana Sayfa Hero */
+.hero {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    max-width: 720px;
+}
+
+.hero-left {
+    align-items: flex-start;
+    text-align: left;
+}
+
+.hero-title {
+    font-size: 60px;
+    font-weight: 700;
+    color: #f59e0b;
+    margin: 0 0 16px 0;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    font-family: Arial, sans-serif;
+}
+
+.hero-subtitle {
+    font-size: 17px;
+    color: #888;
+    font-weight: 400;
+    margin: 0 0 28px 0;
+    letter-spacing: 0.3px;
+    font-family: Arial, sans-serif;
+}
+
+.hero-description {
+    font-size: 15px;
+    color: #555;
+    line-height: 1.75;
+    max-width: 580px;
+    margin: 0 0 24px 0;
+    font-family: Arial, sans-serif;
+}
+
+.hero-text {
+    font-size: 14px;
+    color: #777;
+    line-height: 1.7;
+    max-width: 520px;
+    font-family: Arial, sans-serif;
+}
+
+.hero-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.detail-item {
+    padding: 20px;
+    background: rgba(245, 158, 11, 0.04);
+    border-left: 2px solid #f59e0b;
+    border-radius: 0 8px 8px 0;
+}
+
+.detail-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f59e0b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.detail-text {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.hero-note {
+    font-size: 13px;
+    color: #888;
+    font-weight: 500;
+    margin-top: 24px;
+    letter-spacing: 0.3px;
+}
+
+/* Dark mode - Ana Sayfa */
+body.dark-mode .hero-subtitle {
+    color: #999;
+}
+
+body.dark-mode .hero-description {
+    color: #aaa;
+}
+
+body.dark-mode .hero-text {
+    color: #888;
+}
+
+body.dark-mode .detail-item {
+    background: rgba(245, 158, 11, 0.06);
+}
+
+body.dark-mode .detail-text {
+    color: #aaa;
+}
+
+body.dark-mode .hero-note {
+    color: #999;
+}
+
+/* Responsive - Ana Sayfa */
+@media (max-width: 768px) {
+    .hero {
+        padding: 70px 20px;
+    }
+    
+    .hero-title {
+        font-size: 42px;
+    }
+    
+    .hero-subtitle {
+        font-size: 15px;
+    }
+    
+    .hero-description {
+        font-size: 14px;
+    }
+    
+    .hero-text {
+        font-size: 13px;
+    }
+    
+    .hero-details {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .detail-item {
+        padding: 16px;
+    }
+    
+    .detail-label {
+        font-size: 12px;
+    }
+    
+    .detail-text {
+        font-size: 12px;
+    }
+    
+    .hero-note {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero {
+        padding: 50px 16px;
+    }
+    
+    .hero-title {
+        font-size: 34px;
+    }
+    
+    .hero-subtitle {
+        font-size: 14px;
+    }
+    
+    .hero-description {
+        font-size: 13px;
+    }
+    
+    .hero-text {
+        font-size: 12px;
+    }
+    
+    .detail-label {
+        font-size: 11px;
+    }
+    
+    .detail-text {
+        font-size: 11px;
+    }
+    
+    .hero-note {
+        font-size: 11px;
+    }
+}
 .accordion {
     max-width: 800px;
     margin: 0 auto;

@@ -30,6 +30,8 @@
 (function() {
     'use strict';
 
+    console.log('DUR.');
+
     // ============================================
     // KONTROL VE BAŞLATMA
     // ============================================
@@ -341,20 +343,24 @@
 
         // Sonuçları göster
         if (matches.length > 0) {
-            searchResults.innerHTML = matches.map(section => 
-                `<div class="search-result-item" data-url="${section.url}">${section.name}</div>`
-            ).join('');
-            searchResults.classList.add('active');
-
-            // Tıklama olayları
-            document.querySelectorAll('.search-result-item').forEach(item => {
+            searchResults.textContent = '';
+            matches.forEach(section => {
+                const item = document.createElement('div');
+                item.className = 'search-result-item';
+                item.setAttribute('data-url', section.url);
+                item.textContent = section.name;
                 item.addEventListener('click', function() {
-                    const url = this.getAttribute('data-url');
-                    navigateToSection(url);
+                    navigateToSection(section.url);
                 });
+                searchResults.appendChild(item);
             });
+            searchResults.classList.add('active');
         } else {
-            searchResults.innerHTML = '<div class="search-result-item">Sonuç bulunamadı</div>';
+            searchResults.textContent = '';
+            const item = document.createElement('div');
+            item.className = 'search-result-item';
+            item.textContent = 'Sonuç bulunamadı';
+            searchResults.appendChild(item);
             searchResults.classList.add('active');
         }
     }
@@ -381,6 +387,7 @@
     window.addEventListener('hashchange', () => {
         const currentHash = window.location.hash || '#flowpy';
         setActiveNav(currentHash);
+        document.body.classList.toggle('on-flowpy', currentHash === '#flowpy');
     });
 
     // Arama inputu event listener
@@ -627,7 +634,7 @@
             answer: 'FlowPy, Python kodlarını görsel akış diyagramlarına dönüştüren ve derleyen bir geliştirme aracıdır. Kod yazmayı ve akışları görselleştirmeyi birleştirir.'
         },
         {
-            question: 'TurcoDevelopStudio nedir necededir?',
+            question: 'TurcoDevelopStudio nedir?',
             answer: 'TurcoDevelopStudio, Türkçe geliştirici topluluğu ve açık kaynak projeler geliştiren bir yazılım stüdyosudur. Berkay Özdemir (bercaius) ve BrahimTKM (İbrahim Talha Kömürcü) tarafından kurulmuştur.'
         },
         {
@@ -649,20 +656,27 @@
         const accordion = document.getElementById('faqAccordion');
         if (!accordion) return;
         
-        accordion.innerHTML = FAQ_ITEMS.map(item => `
-            <div class="accordion-item">
-                <div class="accordion-header">${item.question}</div>
-                <div class="accordion-content">
-                    <p>${item.answer}</p>
-                </div>
-            </div>
-        `).join('');
-        
-        // Accordion tıklama olayları
-        accordion.querySelectorAll('.accordion-header').forEach(header => {
+        FAQ_ITEMS.forEach(item => {
+            const accordionItem = document.createElement('div');
+            accordionItem.className = 'accordion-item';
+            
+            const header = document.createElement('div');
+            header.className = 'accordion-header';
+            header.textContent = item.question;
+            
+            const content = document.createElement('div');
+            content.className = 'accordion-content';
+            
+            const paragraph = document.createElement('p');
+            paragraph.textContent = item.answer;
+            
+            content.appendChild(paragraph);
+            accordionItem.appendChild(header);
+            accordionItem.appendChild(content);
+            accordion.appendChild(accordionItem);
+            
             header.addEventListener('click', () => {
-                const item = header.parentElement;
-                item.classList.toggle('active');
+                accordionItem.classList.toggle('active');
             });
         });
     }
@@ -680,19 +694,31 @@
     // Başlangıçta aktif bölümü belirle
     const initialHash = window.location.hash || '#flowpy';
     setActiveNav(initialHash);
-    
-    // Başlangıçta FlowPy bölümünde olduğumuzu belirt
-    document.body.classList.add('on-flowpy');
+    document.body.classList.toggle('on-flowpy', initialHash === '#flowpy');
     
     // Nav-link tıklamalarında aktif bölümü güncelle
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', () => {
-            setActiveNav(link.getAttribute('href'));
+            const href = link.getAttribute('href');
+            setActiveNav(href);
+            document.body.classList.toggle('on-flowpy', href === '#flowpy');
         });
     });
     
     // Scroll olayında aktif bölümü güncelle
-    window.addEventListener('scroll', updateActiveSectionOnScroll);
+    let scrollTicking = false;
+    window.addEventListener('scroll', () => {
+        if (!scrollTicking) {
+            requestAnimationFrame(() => {
+                updateActiveSectionOnScroll();
+                scrollTicking = false;
+            });
+            scrollTicking = true;
+        }
+    });
+
+    // Başlangıçta aktif bölümü belirle
+    updateActiveSectionOnScroll();
 
     // ============================================
     // YARDIMCI FONKSİYONLAR

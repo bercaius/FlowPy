@@ -3,7 +3,7 @@
     =========================
     Bu dosya sitenin iskeletini oluşturur. İçerik üç ana parçadan oluşur:
     
-    1. Arka Plan: Canvas (ağ animasyonu) + ArkaPlanLogo.png (ortadaki logo)
+    1. Arka Plan: Canvas (ağ animasyonu) + ArkaPlanLogo.webp (ortadaki logo)
     2. Üst Çubuk: Sol logo + orta arama + sağ bölümler
     3. Bölümler: Her bölüm ayrı bir <section> etiketiyle tanımlanır
     
@@ -30,6 +30,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FlowPy</title>
+    <meta name="description" content="FlowPy, Python kodlarını görsel akış diyagramlarına dönüştüren ve FlowingTR formatında derleyen Teknofest projesi. Açık beta, ücretsiz deneme sürümü.">
+    <meta name="keywords" content="FlowPy, Python, FlowingTR, akış diyagramı, derleyici, Teknofest, görsel programlama, açık beta">
+    <meta name="author" content="TurcoDevelopStudio">
+    <meta name="robots" content="index, follow">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; font-src 'self'; object-src 'none'; frame-ancestors 'none';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <meta property="og:title" content="FlowPy - Python & FlowingTR Derleyici">
+    <meta property="og:description" content="Python kodlarını görsel akış diyagramlarına dönüştürün, FlowingTR formatında derleyin. Teknofest projesi, açık beta.">
+    <meta property="og:image" content="Assets/OG/og.webp">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:url" content="https://flowpy.app/">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FlowPy - Python & FlowingTR Derleyici">
+    <meta name="twitter:description" content="Python kodlarını görsel akış diyagramlarına dönüştürün. Teknofest projesi, açık beta.">
+    <meta name="twitter:image" content="Assets/OG/og.webp">
+    <meta name="twitter:image:width" content="1200">
+    <meta name="twitter:image:height" content="630">
+    <link rel="canonical" href="https://flowpy.app/">
+    <link rel="icon" type="image/webp" sizes="32x32" href="Assets/Logo/Logo.webp">
+    <link rel="icon" type="image/webp" sizes="16x16" href="Assets/Logo/Logo.webp">
+    <link rel="apple-touch-icon" sizes="180x180" href="Assets/Logo/Logo.webp">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -37,14 +61,14 @@
     <canvas id="networkCanvas"></canvas>
     
     <!-- Arka plan logosu - tam ortada -->
-    <img src="Assets/Logo/ArkaPlanLogo.png" alt="FlowPy" class="background-logo" id="bgLogo">
+    <img src="Assets/Logo/ArkaPlanLogo.webp" alt="FlowPy" class="background-logo" id="bgLogo">
     
     <!-- Üst çubuk -->
     <header class="top-bar">
         <div class="header-content">
-            <!-- Sol: Yazılı Logo -->
+            <!-- Sol: Logo -->
             <div class="header-left">
-                <img src="Assets/Logo/yazili_logo.png" alt="FlowPy" class="header-logo-img">
+                <img src="Assets/Logo/Logo.webp" alt="FlowPy" class="header-logo-img">
             </div>
             
             <!-- Orta: Arama çubuğu -->
@@ -87,7 +111,23 @@
         <!-- Ana Sayfa -->
         <section id="home" class="section">
             <div class="section-content">
-                <h2>Ana Sayfa</h2>
+                <div class="hero hero-left">
+                    <h1 class="hero-title">FlowPy</h1>
+                    <p class="hero-subtitle">Python & FlowingTR arasında eş zamanlı derleme</p>
+                    <p class="hero-description">Yazdığınız Python kodunu görsel akış diyagramlarına dönüştürür. Diyagramı düzenlerseniz Python kodu anlık olarak güncellenir. İki yönlü, anlık ve basit.</p>
+                    <p class="hero-text">Teknofest projesi olarak geliştirilen FlowPy, açık beta sürecinde. Deneme sürümü şu anda ücretsiz olarak erişilebilir. Kullanıcı geri bildirimleriyle sürekli geliştiriliyor.</p>
+                    <div class="hero-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Nasıl Çalışır?</span>
+                            <p class="detail-text">Kod yazın, akış diyagramı oluşsun. Diyagramı düzenleyin, kod anlık güncellensin. İki yönlü senkronizasyon ile çalışır.</p>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Neden FlowPy?</span>
+                            <p class="detail-text">Görsel programlama ile Python'u öğrenin veya hızlandırın. Karmaşık akışları basit bloklarla yapın. Derleme tek tuşla.</p>
+                        </div>
+                    </div>
+                    <p class="hero-note">Basit arayüz, güçlü motor. Deneme sürümü şu anda ücretsiz.</p>
+                </div>
             </div>
         </section>
         
@@ -103,7 +143,11 @@
             <div class="section-content">
                 <h2>Hakkımızda</h2>
                 <p class="about-text">TurcoDevelop Studio, Şubat 2026 tarihinde BrahimTKM ve Bercaius tarafından kurulmuş geliştirici ekibidir. Kurucularımız Abdurrahmanpaşa Lisesinde okumakta olup toplamda 2 tane yapay zeka konusunda yerel seminer vermiştir.</p>
-                <p class="about-text">Performans isteyenler sadece site URL'sini görebilir. Kalite isteyenler için: <a href="https://bercaius.github.io/turcodevelop-studio/" target="_blank" class="about-link">https://bercaius.github.io/turcodevelop-studio/</a></p>
+                
+                <div class="studio-url">
+                    <img src="Assets/Logo/TurcoDevelopStudioLogo.webp" alt="TurcoDevelop Studio" class="studio-url-logo">
+                    <a href="https://bercaius.github.io/turcodevelop-studio/" target="_blank" rel="noopener noreferrer" class="studio-url-link">TurcoDevelopStudio Resmi Web Sitesi</a>
+                </div>
             </div>
         </section>
         
@@ -123,7 +167,7 @@
         <div class="footer-content">
             <div class="footer-item">
                 <span class="footer-label">Geliştirici:</span>
-                <img src="Assets/Logo/bercaius.png" alt="Berkay Özdemir" class="footer-logo">
+                <img src="Assets/Logo/bercaius.webp" alt="Berkay Özdemir" class="footer-logo">
                 <span class="footer-link" id="devLink">Berkay Özdemir (bercaius)</span>
                 <div class="footer-dropdown" id="devDropdown">
                     <a href="https://github.com/bercaius" target="_blank" rel="noopener noreferrer">GitHub</a>
@@ -132,7 +176,7 @@
             </div>
             <div class="footer-item">
                 <span class="footer-label">Stüdyo:</span>
-                <img src="Assets/Logo/TurcoDevelopStudioLogo.png" alt="TurcoDevelopStudio" class="footer-logo">
+                <img src="Assets/Logo/TurcoDevelopStudioLogo.webp" alt="TurcoDevelopStudio" class="footer-logo">
                 <span class="footer-link" id="studioLink">TurcoDevelopStudio</span>
                 <div class="footer-dropdown" id="studioDropdown">
                     <a href="https://www.instagram.com/turcodevelopstudioo/" target="_blank" rel="noopener noreferrer">Instagram</a>
