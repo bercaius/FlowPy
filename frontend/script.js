@@ -30,8 +30,6 @@
 (function() {
     'use strict';
 
-    console.log('DUR.');
-
     // ============================================
     // KONTROL VE BAŞLATMA
     // ============================================
@@ -658,7 +656,7 @@
     ];
 
     // FAQ Accordion'ı oluştur
-     function initFAQAccordion() {
+    function initFAQAccordion() {
         const accordion = document.getElementById('faqAccordion');
         if (!accordion) return;
         
@@ -798,6 +796,8 @@
         } catch (e) {
             console.warn('Dosyalar yüklenemedi:', e);
         }
+        
+        fileTabsContainer.innerHTML = '';
         const tab = createFileTab(currentFile);
         fileTabsContainer.appendChild(tab);
         codeEditor.value = files[currentFile] || '';
@@ -812,6 +812,476 @@
             console.warn('Dosyalar kaydedilemedi:', e);
         }
     }
+
+    // ============================================
+    // WORKSPACE - Klasör/Dosya Yönetimi
+    // ============================================
+    const workspaceTree = document.getElementById('workspaceTree');
+    const contextMenu = document.getElementById('contextMenu');
+    const btnNewFolder = document.getElementById('btnNewFolder');
+    const btnNewFileWS = document.getElementById('btnNewFileWS');
+    const btnExportZip = document.getElementById('btnExportZip');
+    const btnImportZip = document.getElementById('btnImportZip');
+    const zipInput = document.getElementById('zipInput');
+
+    let workspaceItems = [];
+    let selectedItemId = null;
+    let contextTargetId = null;
+    let nextId = 1;
+
+    function generateId() {
+        return 'item_' + Date.now() + '_' + (nextId++);
+    }
+
+    function getItemById(id) {
+        return workspaceItems.find(item => item.id === id);
+    }
+
+    function getItemPath(item) {
+        const parts = [];
+        let current = item;
+        while (current && current.parentId) {
+            parts.unshift(current.name);
+            current = getItemById(current.parentId);
+        }
+        return parts.join('/') || '/';
+    }
+
+    function createFolder(name, parentId) {
+        const folder = {
+            id: generateId(),
+            name: name,
+            type: 'folder',
+            parentId: parentId || null,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+        workspaceItems.push(folder);
+        return folder;
+    }
+
+    function createFile(name, parentId, content) {
+        const file = {
+            id: generateId(),
+            name: name,
+            type: 'file',
+            parentId: parentId || null,
+            content: content || '',
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+        workspaceItems.push(file);
+        return file;
+    }
+
+    function deleteItem(id) {
+        const item = getItemById(id);
+        if (!item) return;
+        
+        // Delete children recursively
+        const children = workspaceItems.filter(i => i.parentId === id);
+        children.forEach(child => deleteItem(child.id));
+        
+        // Remove from array
+        const index = workspaceItems.findIndex(i => i.id === id);
+        if (index > -1) {
+            workspaceItems.splice(index, 1);
+        }
+        
+        // If it was the current file, switch to main.py
+        if (currentFile === item.name && item.type === 'file') {
+            const root = workspaceItems.find(i => i.name === 'main.py' && i.type === 'file' && !i.parentId);
+            if (root) {
+                switchToFile(root.name);
+                files[root.name] = root.content;
+            }
+        }
+    }
+
+    function renameItem(id, newName) {
+        const item = getItemById(id);
+        if (!item) return;
+        item.name = newName;
+        item.updatedAt = Date.now();
+    }
+
+    function moveItem(id, newParentId) {
+        const item = getItemById(id);
+        if (!item) return;
+        item.parentId = newParentId;
+        item.updatedAt = Date.now();
+    }
+
+    function getChildren(parentId) {
+        return workspaceItems.filter(item => item.parentId === parentId);
+    }
+
+    function renderWorkspaceTree() {
+        if (!workspaceTree) return;
+        workspaceTree.innerHTML = '';
+        
+        const rootItems = getChildren(null);
+        rootItems.sort((a, b) => {
+            if (a.type === b.type) return a.name.localeCompare(b.name);
+            return a.type === 'folder' ? -1 : 1;
+        });
+        
+        rootItems.forEach(item => {
+            workspaceTree.appendChild(renderTreeItem(item, 0));
+        });
+    }
+
+    function renderTreeItem(item, depth) {
+        const div = document.createElement('div');
+        div.className = 'workspace-item' + (item.id === selectedItemId ? ' active' : '');
+        div.style.paddingLeft = (12 + depth * 18) + 'px';
+        div.setAttribute('data-id', item.id);
+        
+        const icon = document.createElement('span');
+        icon.className = 'workspace-item-icon';
+        icon.textContent = item.type === 'folder' ? '📁' : '📄';
+        
+        const name = document.createElement('span');
+        name.className = 'workspace-item-name';
+        name.textContent = item.name;
+        
+        const actions = document.createElement('div');
+        actions.className = 'workspace-item-actions';
+        
+        const renameBtn = document.createElement('button');
+        renameBtn.className = 'workspace-item-btn';
+        renameBtn.textContent = '✏️';
+        renameBtn.title = 'Yeniden Adlandır';
+        renameBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startRename(item.id);
+        });
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'workspace-item-btn';
+        deleteBtn.textContent = '🗑️';
+        deleteBtn.title = 'Sil';
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm('"' + item.name + '" silinsin mi?')) {
+                deleteItem(item.id);
+                saveWorkspaceToStorage();
+                renderWorkspaceTree();
+            }
+        });
+        
+        actions.appendChild(renameBtn);
+        actions.appendChild(deleteBtn);
+        div.appendChild(icon);
+        div.appendChild(name);
+        div.appendChild(actions);
+        
+        // Click handler
+        div.addEventListener('click', () => {
+            selectedItemId = item.id;
+            if (item.type === 'file') {
+                openFile(item);
+            }
+            renderWorkspaceTree();
+        });
+        
+        // Right click handler
+        div.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            selectedItemId = item.id;
+            contextTargetId = item.id;
+            showContextMenu(e.clientX, e.clientY);
+            renderWorkspaceTree();
+        });
+        
+        // Double click for rename
+        div.addEventListener('dblclick', () => {
+            if (item.type === 'file') {
+                startRename(item.id);
+            }
+        });
+        
+        // If folder, render children
+        if (item.type === 'folder') {
+            const children = getChildren(item.id);
+            children.sort((a, b) => {
+                if (a.type === b.type) return a.name.localeCompare(b.name);
+                return a.type === 'folder' ? -1 : 1;
+            });
+            children.forEach(child => {
+                div.appendChild(renderTreeItem(child, depth + 1));
+            });
+        }
+        
+        return div;
+    }
+
+    function openFile(item) {
+        if (item.type !== 'file') return;
+        currentFile = item.name;
+        files[item.name] = item.content || '';
+        codeEditor.value = files[item.name];
+        
+        // Create tab if not exists
+        let tab = document.querySelector('.file-tab[data-file="' + item.name + '"]');
+        if (!tab) {
+            tab = createFileTab(item.name);
+            fileTabsContainer.appendChild(tab);
+        }
+        
+        // Update active state
+        document.querySelectorAll('.file-tab').forEach(t => {
+            t.classList.toggle('active', t.getAttribute('data-file') === item.name);
+        });
+        
+        selectedItemId = item.id;
+        renderWorkspaceTree();
+        setStatus(ideStatus, 'Düzenleniyor: ' + item.name);
+    }
+
+    function startRename(id) {
+        const item = getItemById(id);
+        if (!item) return;
+        
+        const newName = prompt('Yeni ad:', item.name);
+        if (!newName || newName === item.name) return;
+        
+        renameItem(id, newName);
+        saveWorkspaceToStorage();
+        renderWorkspaceTree();
+    }
+
+    function showContextMenu(x, y) {
+        contextMenu.style.left = x + 'px';
+        contextMenu.style.top = y + 'px';
+        contextMenu.style.display = 'block';
+    }
+
+    function hideContextMenu() {
+        contextMenu.style.display = 'none';
+        contextTargetId = null;
+    }
+
+    // Context menu handlers
+    document.getElementById('ctxNewFile').addEventListener('click', () => {
+        hideContextMenu();
+        if (!contextTargetId) return;
+        const target = getItemById(contextTargetId);
+        const parentId = target && target.type === 'folder' ? target.id : null;
+        const name = prompt('Dosya adı (örn: script.py):');
+        if (!name || !name.endsWith('.py')) {
+            alert('Lütfen .py uzantılı dosya adı girin.');
+            return;
+        }
+        const file = createFile(name, parentId, '');
+        const existing = workspaceItems.find(i => i.name === name && !i.parentId);
+        if (existing) {
+            alert('Bu dosya zaten var.');
+            return;
+        }
+        openFile(file);
+        saveWorkspaceToStorage();
+        renderWorkspaceTree();
+    });
+
+    document.getElementById('ctxNewFolder').addEventListener('click', () => {
+        hideContextMenu();
+        const parentId = contextTargetId ? (getItemById(contextTargetId).type === 'folder' ? contextTargetId : null) : null;
+        const name = prompt('Klasör adı:');
+        if (!name) return;
+        createFolder(name, parentId);
+        saveWorkspaceToStorage();
+        renderWorkspaceTree();
+    });
+
+    document.getElementById('ctxRename').addEventListener('click', () => {
+        hideContextMenu();
+        if (contextTargetId) {
+            startRename(contextTargetId);
+        }
+    });
+
+    document.getElementById('ctxDelete').addEventListener('click', () => {
+        hideContextMenu();
+        if (contextTargetId) {
+            const item = getItemById(contextTargetId);
+            if (confirm('"' + item.name + '" silinsin mi?')) {
+                deleteItem(contextTargetId);
+                saveWorkspaceToStorage();
+                renderWorkspaceTree();
+            }
+        }
+    });
+
+    // Hide context menu on click outside
+    document.addEventListener('click', (e) => {
+        if (!contextMenu.contains(e.target)) {
+            hideContextMenu();
+        }
+    });
+
+    // Workspace toolbar buttons
+    if (btnNewFolder) {
+        btnNewFolder.addEventListener('click', () => {
+            const name = prompt('Klasör adı:');
+            if (!name) return;
+            createFolder(name, null);
+            saveWorkspaceToStorage();
+            renderWorkspaceTree();
+        });
+    }
+
+    if (btnNewFileWS) {
+        btnNewFileWS.addEventListener('click', () => {
+            const name = prompt('Dosya adı (örn: script.py):');
+            if (!name || !name.endsWith('.py')) {
+                alert('Lütfen .py uzantılı dosya adı girin.');
+                return;
+            }
+            const existing = workspaceItems.find(i => i.name === name && !i.parentId);
+            if (existing) {
+                alert('Bu dosya zaten var.');
+                return;
+            }
+            const file = createFile(name, null, '');
+            openFile(file);
+            saveWorkspaceToStorage();
+            renderWorkspaceTree();
+        });
+    }
+
+    // ZIP Export
+    if (btnExportZip) {
+        btnExportZip.addEventListener('click', async () => {
+            if (typeof JSZip === 'undefined') {
+                alert('JSZip kütüphanesi yüklenemedi.');
+                return;
+            }
+            
+            saveCurrentFile();
+            await saveWorkspaceToStorage();
+            
+            const zip = new JSZip();
+            const rootFiles = workspaceItems.filter(item => !item.parentId);
+            
+            function addToZip(items, folder) {
+                items.forEach(item => {
+                    if (item.type === 'folder') {
+                        const subfolder = folder.folder(item.name);
+                        const children = workspaceItems.filter(i => i.parentId === item.id);
+                        addToZip(children, subfolder);
+                    } else {
+                        folder.file(item.name, item.content || '');
+                    }
+                });
+            }
+            
+            addToZip(rootFiles, zip);
+            
+            const blob = await zip.generateAsync({type: 'blob'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'flowpy_workspace.zip';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    // ZIP Import
+    if (btnImportZip) {
+        btnImportZip.addEventListener('click', () => {
+            zipInput.click();
+        });
+    }
+
+    if (zipInput) {
+        zipInput.addEventListener('change', async (e) => {
+            if (typeof JSZip === 'undefined') {
+                alert('JSZip kütüphanesi yüklenemedi.');
+                return;
+            }
+            
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            try {
+                const zip = await JSZip.loadAsync(file);
+                workspaceItems = [];
+                nextId = 1;
+                
+                async function processZip(folder, parentId) {
+                    const promises = [];
+                    folder.forEach(async (relativePath, zipEntry) => {
+                        if (zipEntry.dir) {
+                            const folderItem = createFolder(relativePath.split('/')[0], parentId);
+                            // Process subfolder
+                            const subfolder = zip.folder(relativePath);
+                            if (subfolder) {
+                                await processZip(subfolder, folderItem.id);
+                            }
+                        } else {
+                            const content = await zipEntry.async('string');
+                            createFile(relativePath.split('/').pop(), parentId, content);
+                        }
+                    });
+                    await Promise.all(promises);
+                }
+                
+                await processZip(zip, null);
+                saveWorkspaceToStorage();
+                renderWorkspaceTree();
+                appendOutput('Workspace içeri aktarıldı: ' + file.name, 'success');
+            } catch (err) {
+                appendOutput('ZIP içe aktarma hatası: ' + err.message, 'error');
+            }
+            
+            zipInput.value = '';
+        });
+    }
+
+    async function loadWorkspaceFromStorage() {
+        try {
+            if (typeof localforage !== 'undefined') {
+                const stored = await localforage.getItem('flowpy_workspace');
+                if (stored && Array.isArray(stored.items)) {
+                    workspaceItems = stored.items;
+                    nextId = stored.nextId || 1;
+                }
+            }
+        } catch (e) {
+            console.warn('Workspace yüklenemedi:', e);
+        }
+        
+        // Create default files if empty
+        if (workspaceItems.length === 0) {
+            createFile('main.py', null, '# Python kodunuzu buraya yazın\ndef merhaba():\n    print("Merhaba FlowPy!")\n\nmerhaba()\n');
+            createFolder('proje', null);
+            saveWorkspaceToStorage();
+        }
+        
+        renderWorkspaceTree();
+    }
+
+    async function saveWorkspaceToStorage() {
+        try {
+            if (typeof localforage !== 'undefined') {
+                await localforage.setItem('flowpy_workspace', {
+                    items: workspaceItems,
+                    nextId: nextId
+                });
+            }
+        } catch (e) {
+            console.warn('Workspace kaydedilemedi:', e);
+        }
+    }
+
+    // Auto-save workspace
+    const workspaceAutoSave = setInterval(saveWorkspaceToStorage, 30000);
+    window.addEventListener('beforeunload', () => {
+        clearInterval(workspaceAutoSave);
+        saveWorkspaceToStorage();
+    });
 
     function appendOutput(text, type) {
         type = type || 'info';
@@ -838,12 +1308,21 @@
         tab.innerHTML = '<span class="file-name">' + filename + '</span><button class="file-close">&times;</button>';
         tab.querySelector('.file-close').addEventListener('click', function(e) {
             e.stopPropagation();
-            if (Object.keys(files).length <= 1) return;
+            const wsItem = workspaceItems.find(i => i.name === filename && i.type === 'file' && !i.parentId);
+            const fileCount = workspaceItems.filter(i => i.type === 'file' && !i.parentId).length;
+            if (fileCount <= 1) return;
+            if (wsItem) {
+                deleteItem(wsItem.id);
+                saveWorkspaceToStorage();
+                renderWorkspaceTree();
+            }
             delete files[filename];
             tab.remove();
             if (currentFile === filename) {
                 const remaining = Object.keys(files);
-                switchToFile(remaining[0]);
+                if (remaining.length > 0) {
+                    switchToFile(remaining[0]);
+                }
             }
         });
         tab.addEventListener('click', function() {
@@ -853,9 +1332,19 @@
     }
 
     function switchToFile(filename) {
-        if (!files[filename]) return;
-        currentFile = filename;
-        codeEditor.value = files[filename];
+        const wsItem = workspaceItems.find(item => item.name === filename && item.type === 'file');
+        if (wsItem) {
+            currentFile = filename;
+            files[filename] = wsItem.content || '';
+            codeEditor.value = files[filename];
+            selectedItemId = wsItem.id;
+            renderWorkspaceTree();
+        } else if (files[filename]) {
+            currentFile = filename;
+            codeEditor.value = files[filename];
+        } else {
+            return;
+        }
         document.querySelectorAll('.file-tab').forEach(function(t) {
             t.classList.toggle('active', t.getAttribute('data-file') === filename);
         });
@@ -863,25 +1352,54 @@
     }
 
     function addNewFile() {
-        const name = prompt('Dosya adı (örn: script.py):');
-        if (!name) return;
+        const modal = document.getElementById('newFileModal');
+        const input = document.getElementById('newFileName');
+        if (!modal || !input) return;
+        modal.classList.add('active');
+        input.value = '';
+        input.focus();
+    }
+
+    function createNewFile() {
+        const input = document.getElementById('newFileName');
+        const modal = document.getElementById('newFileModal');
+        if (!input || !modal) return;
+        const name = input.value.trim();
+        if (!name) {
+            alert('Lütfen dosya adı girin.');
+            return;
+        }
         if (!name.endsWith('.py')) {
             alert('Lütfen .py uzantılı dosya adı girin.');
             return;
         }
-        if (files[name]) {
+        const existing = workspaceItems.find(i => i.name === name && !i.parentId);
+        if (existing) {
             alert('Bu dosya zaten var.');
             return;
         }
-        files[name] = '';
-        const tab = createFileTab(name);
-        fileTabsContainer.appendChild(tab);
-        switchToFile(name);
+        const file = createFile(name, null, '');
+        openFile(file);
+        saveWorkspaceToStorage();
+        renderWorkspaceTree();
+        modal.classList.remove('active');
+    }
+
+    function closeNewFileModal() {
+        const modal = document.getElementById('newFileModal');
+        if (modal) modal.classList.remove('active');
     }
 
     function saveCurrentFile() {
         if (!currentFile) return;
         files[currentFile] = codeEditor.value;
+        
+        // Update workspace item if exists
+        const wsItem = workspaceItems.find(item => item.name === currentFile && item.type === 'file');
+        if (wsItem) {
+            wsItem.content = codeEditor.value;
+            wsItem.updatedAt = Date.now();
+        }
     }
 
     async function runPython() {
@@ -931,42 +1449,40 @@ sys.stdout = StringIO()
         setStatus(flowStatus, 'Senkronize ediliyor...');
         
         const code = codeEditor.value;
-        const nodes = [];
-        const connections = [];
         
         try {
             if (typeof window.pyodide !== 'undefined' && pyodideReady) {
-                const escapedCode = code.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-                const astCode = [
-                    'import ast, json, sys',
-                    'code = """' + escapedCode + '"""',
-                    'try:',
-                    '    tree = ast.parse(code)',
-                    '    nodes_list = []',
-                    '    connections_list = []',
-                    '    for node in ast.walk(tree):',
-                    '        node_type = type(node).__name__',
-                    '        node_data = {"type": node_type, "line": getattr(node, "lineno", 0)}',
-                    '        if isinstance(node, ast.FunctionDef):',
-                    '            node_data["label"] = node.name',
-                    '            nodes_list.append(node_data)',
-                    '        elif isinstance(node, ast.Assign):',
-                    '            for target in node.targets:',
-                    '                if isinstance(target, ast.Name):',
-                    '                    node_data["label"] = target.id',
-                    '                    nodes_list.append(node_data)',
-                    '        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):',
-                    '            if isinstance(node.value.func, ast.Name):',
-                    '                node_data["label"] = node.value.func.id',
-                    '                nodes_list.append(node_data)',
-                    '    for i in range(len(nodes_list) - 1):',
-                    '        connections_list.append({"from": i, "to": i + 1})',
-                    '    print(json.dumps({"nodes": nodes_list, "connections": connections_list}))',
-                    'except SyntaxError as e:',
-                    '    print(json.dumps({"error": str(e)}))'
-                ].join('\\n');
-                
-                const result = window.pyodide.runPython(astCode);
+                const fs = window.pyodide.FS;
+                fs.writeFile('/tmp/flowpy_code.py', code);
+                const result = window.pyodide.runPython(`
+import ast, json
+with open('/tmp/flowpy_code.py') as f:
+    source = f.read()
+try:
+    tree = ast.parse(source)
+    nodes_list = []
+    connections_list = []
+    for node in ast.walk(tree):
+        node_type = type(node).__name__
+        node_data = {"type": node_type, "line": getattr(node, "lineno", 0)}
+        if isinstance(node, ast.FunctionDef):
+            node_data["label"] = node.name
+            nodes_list.append(node_data)
+        elif isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    node_data["label"] = target.id
+                    nodes_list.append(node_data)
+        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            if isinstance(node.value.func, ast.Name):
+                node_data["label"] = node.value.func.id
+                nodes_list.append(node_data)
+    for i in range(len(nodes_list) - 1):
+        connections_list.append({"from": i, "to": i + 1})
+    print(json.dumps({"nodes": nodes_list, "connections": connections_list}))
+except SyntaxError as e:
+    print(json.dumps({"error": str(e)}))
+`);
                 const parsed = JSON.parse(result.trim());
                 if (parsed.error) {
                     appendOutput('Senkronizasyon hatası: ' + parsed.error, 'error');
@@ -1078,10 +1594,12 @@ sys.stdout = StringIO()
         container._connections = connections;
         container._drawConnections = drawConnections;
         
+        window._currentFlowContainer = container;
+        
         if (!window._flowResizeHandler) {
             window._flowResizeHandler = function() {
-                if (flowCanvas.contains(container)) {
-                    drawConnections();
+                if (window._currentFlowContainer && flowCanvas.contains(window._currentFlowContainer)) {
+                    window._currentFlowContainer._drawConnections();
                 }
             };
             window.addEventListener('resize', window._flowResizeHandler);
@@ -1183,15 +1701,28 @@ sys.stdout = StringIO()
     if (btnSendReport) btnSendReport.addEventListener('click', sendReport);
     if (btnNewFile) btnNewFile.addEventListener('click', addNewFile);
 
+    const btnCreateNewFile = document.getElementById('btnCreateNewFile');
+    const btnCancelNewFile = document.getElementById('btnCancelNewFile');
+    const newFileModal = document.getElementById('newFileModal');
+    if (btnCreateNewFile) btnCreateNewFile.addEventListener('click', createNewFile);
+    if (btnCancelNewFile) btnCancelNewFile.addEventListener('click', closeNewFileModal);
+    if (newFileModal) {
+        newFileModal.addEventListener('click', function(e) {
+            if (e.target === newFileModal) closeNewFileModal();
+        });
+    }
+
     codeEditor.addEventListener('input', function() {
         saveCurrentFile();
     });
 
-    reportModal.addEventListener('click', function(e) {
-        if (e.target === reportModal) closeReportModal();
-    });
+    if (reportModal) {
+        reportModal.addEventListener('click', function(e) {
+            if (e.target === reportModal) closeReportModal();
+        });
+    }
 
-    loadFilesFromStorage();
+    loadWorkspaceFromStorage();
 
     // Kaydetme otomatik
     const autoSaveInterval = setInterval(saveFilesToStorage, 30000);

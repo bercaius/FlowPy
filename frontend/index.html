@@ -34,7 +34,7 @@
     <meta name="keywords" content="FlowPy, Python, FlowingTR, akış diyagramı, derleyici, Teknofest, görsel programlama, açık beta">
     <meta name="author" content="TurcoDevelopStudio">
     <meta name="robots" content="index, follow">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https:; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://formspree.io; font-src 'self'; object-src 'none'; frame-ancestors 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https:; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://formspree.io https://cdn.jsdelivr.net; font-src 'self'; object-src 'none';">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta name="referrer" content="no-referrer-when-downgrade">
     <meta property="og:title" content="FlowPy - Python & FlowingTR Derleyici">
@@ -55,8 +55,9 @@
     <link rel="icon" type="image/webp" sizes="16x16" href="Assets/Logo/Logo.webp">
     <link rel="apple-touch-icon" sizes="180x180" href="Assets/Logo/Logo.webp">
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/pyodide/v314.0.4/full/pyodide.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v314.0.4/full/pyodide.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
 </head>
 <body>
     <!-- Arka plan ağ görselleştirmesi -->
@@ -174,7 +175,24 @@
                         </div>
                     </div>
                     
-                    <div class="compiler-panels">
+                    <div class="compiler-workspace">
+                        <div class="workspace-sidebar">
+                            <div class="workspace-header">
+                                <span class="workspace-title">Workspace</span>
+                                <div class="workspace-actions">
+                                    <button class="workspace-btn" id="btnNewFolder" title="Yeni Klasör">&#128193;</button>
+                                    <button class="workspace-btn" id="btnNewFileWS" title="Yeni Dosya">&#128196;</button>
+                                    <button class="workspace-btn" id="btnExportZip" title="ZIP Olarak Dışarı Çıkar">&#128230;</button>
+                                    <button class="workspace-btn" id="btnImportZip" title="ZIP İçeri Aktar">&#128230;</button>
+                                    <input type="file" id="zipInput" accept=".zip" style="display: none;">
+                                </div>
+                            </div>
+                            <div class="workspace-tree" id="workspaceTree">
+                                <!-- Dosya ağacı JS ile doldurulacak -->
+                            </div>
+                        </div>
+                        <div class="workspace-divider"></div>
+                        <div class="compiler-panels">
                         <div class="panel panel-ide">
                             <div class="panel-header">
                                 <span class="panel-title">Python IDE</span>
@@ -276,6 +294,27 @@
                 <button class="modal-btn modal-btn-primary" id="btnSendReport">Gönder</button>
             </div>
         </div>
+    </div>
+    
+    <!-- Yeni Dosya Modal -->
+    <div class="modal-overlay" id="newFileModal">
+        <div class="modal">
+            <h3 class="modal-title">Yeni Dosya</h3>
+            <p class="modal-desc">Dosya adı .py uzantılı olmalıdır.</p>
+            <input type="text" class="modal-input" id="newFileName" placeholder="örnek: script.py" autocomplete="off">
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-secondary" id="btnCancelNewFile">İptal</button>
+                <button class="modal-btn modal-btn-primary" id="btnCreateNewFile">Oluştur</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Context Menu -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" id="ctxNewFile">&#128196; Yeni Dosya</div>
+        <div class="context-menu-item" id="ctxNewFolder">&#128193; Yeni Klasör</div>
+        <div class="context-menu-item" id="ctxRename">&#9998; Yeniden Adlandır</div>
+        <div class="context-menu-item danger" id="ctxDelete">&#128465; Sil</div>
     </div>
     
     <script src="script.js"></script>
