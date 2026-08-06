@@ -1,15 +1,21 @@
 /*
- * FlowPy - Arka Plan Stilleri
- * 
- * Bu dosya, sitenin arka plan görselleştirmesi için gerekli stilleri içerir.
- * 
- * Düzenleme Notları:
- * - .background-logo: Arka plan logosunun ayarları
- * - .top-bar: Üst çubuğun ayarları
- * - .header-logo-img: Sol üst logosunun ayarları
- * - .nav-link: Navigasyon linklerinin stilleri
- * - #networkCanvas: Ağ görselleştirmesinin ayarları
- */
+    FlowPy - Stil Dosyası
+    =====================
+    Bu dosya sitenin tüm görsel düzenini yönetir. Renkler, boyutlar, animasyonlar
+    ve responsive ayarlar burada tanımlıdır.
+
+    TEMA RENKLERİ:
+    - Turuncu: #f59e0b (ana tema rengi)
+    - Koyu Turuncu: #d97706 (hover durumları)
+    - Beyaz: #ffffff (arka plan)
+    - Açık Gri: #f5f5f5 (kaydırma çubuğu zemini)
+
+    YENİ BÖLÜM EKLEMEK İÇİN:
+    -------------------------
+    Yeni bölüm eklerken CSS'e dokunmana gerek yok. .section sınıfı
+    otomatik olarak tüm bölümlere uygulanır. Sadece özel bir stil
+    istiyorsan aşağıya ekleyebilirsin.
+*/
 
 /* Temel Ayarlar */
 * {
@@ -18,11 +24,56 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth; /* Yumuşak kaydırma */
+}
+
 body {
     overflow-x: hidden;
     overflow-y: auto;
     background: #ffffff; /* Beyaz arka plan */
     font-family: Arial, sans-serif;
+}
+
+/* Özel kaydırma çubuğu - tema rengi */
+::-webkit-scrollbar {
+    width: 10px; /* İnce kaydırma çubuğu */
+}
+
+::-webkit-scrollbar-track {
+    background: #f5f5f5; /* Açık gri arka plan */
+}
+
+::-webkit-scrollbar-thumb {
+    background: #f59e0b; /* Turuncu - tema rengi */
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #d97706; /* Koyu turuncu - hover */
+}
+
+/* Firefox için */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #f59e0b #f5f5f5;
+}
+
+/* Dark mode - kaydırma çubuğu siyah */
+body.dark-mode ::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+    background: #333333;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: #555555;
+}
+
+body.dark-mode {
+    scrollbar-color: #333333 #1a1a1a;
 }
 
 /* Canvas - tüm ekranı kaplar, logonun arkasında */
@@ -48,7 +99,13 @@ body {
     max-width: 500px; /* Orta boyut */
     width: 50%; /* Ekran genişliğinin %50'si */
     height: auto;
+    transition: opacity 0.5s ease; /* Yumuşak solma */
     /* Filter yok - orijinal renkler korunuyor */
+}
+
+/* FlowPy bölümü dışında logo solsun */
+body:not(.on-flowpy) .background-logo {
+    opacity: 0.1; /* Çok soluk */
 }
 
 /* Üst çubuk - turuncu */
@@ -61,6 +118,7 @@ body {
     background: #f59e0b; /* Turuncu */
     z-index: 1000; /* En üstte */
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Hafif gölge */
+    border-bottom: 1px solid #ffffff; /* İnce beyaz çizgi */
 }
 
 .header-content {
@@ -195,6 +253,239 @@ body {
     transform: scaleX(1);
 }
 
+/* Tema değiştirme butonu */
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    margin: 0 10px;
+}
+
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.theme-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Dark mode */
+body.dark-mode {
+    background: #1a1a1a; /* Siyah arka plan - ağlar ve logolar görünür */
+}
+
+body.dark-mode #networkCanvas {
+    /* Canvas ağı koyu temada da gözüksün */
+}
+
+body.dark-mode .background-logo {
+    /* Logo koyu temada da görünür */
+    opacity: 0.9;
+}
+
+body.dark-mode .section-content h2 {
+    color: #ffffff; /* Beyaz başlık */
+}
+
+body.dark-mode .search-input {
+    background: rgba(26, 26, 26, 0.95); /* Koyu arama */
+    color: #ffffff;
+}
+
+body.dark-mode .search-input::placeholder {
+    color: #999;
+}
+
+body.dark-mode .search-results {
+    background: #2a2a2a;
+}
+
+body.dark-mode .search-result-item {
+    color: #ffffff;
+}
+
+body.dark-mode .footer-link {
+    color: white;
+}
+
+body.dark-mode .footer-label {
+    color: white;
+}
+
+body.dark-mode .footer-dropdown a {
+    color: #333;
+}
+
+/* Dark mode - çizgiler siyah */
+body.dark-mode .top-bar {
+    border-bottom-color: #000000;
+}
+
+body.dark-mode .bottom-bar {
+    border-top-color: #000000;
+}
+
+body.dark-mode .section {
+    border-bottom-color: #333333;
+}
+
+/* Bölüm alanları */
+.sections {
+    position: relative;
+    z-index: 5; /* Ağların önünde */
+    padding-top: 60px; /* Üst çubuk yüksekliği */
+}
+
+.section {
+    min-height: 100vh; /* Her bölüm tam ekran */
+    display: flex;
+    align-items: flex-end; /* Alt çizginin altına yapıştır */
+    justify-content: center;
+    padding: 40px 20px 80px 20px; /* Altına daha fazla boşluk */
+    border-bottom: 1px solid #f59e0b; /* Turuncu ayırıcı */
+}
+
+/* FlowPy bölümü - sadece arka plan */
+.section-flowpy {
+    min-height: 100vh;
+    background: transparent; /* Arka plan görünsün */
+    border-bottom: none;
+}
+
+.section-content {
+    max-width: 1200px;
+    width: 100%;
+    text-align: left; /* Sola hizalı */
+}
+
+.section-content h2 {
+    font-size: 32px;
+    color: #f59e0b; /* Turuncu - tema rengi */
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-align: left; /* Sola hizalı */
+}
+
+/* Alt çubuk - en altta */
+.bottom-bar {
+    position: relative;
+    background: #f59e0b; /* Turuncu - tema rengi */
+    padding: 20px 0;
+    z-index: 100; /* Canvas ve sections üzerinde */
+    overflow: visible; /* Dropdown için */
+    border-top: 1px solid #ffffff; /* İnce beyaz çizgi */
+}
+
+.footer-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 60px;
+    padding: 0 30px;
+    flex-wrap: wrap;
+}
+
+.footer-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.footer-label {
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.footer-logo {
+    height: 35px; /* Orantılı boyut */
+    width: auto;
+    border-radius: 50%; /* Yuvarlak - profil fotoğrafı için */
+    object-fit: cover;
+    transition: transform 0.3s ease, border-radius 0.3s ease; /* Yumuşak büyüme */
+    /* Filter yok - orijinal renkler korunuyor */
+}
+
+/* Logo hover - 2 saniye sonra büyüme, yumuşak kare */
+.footer-logo:hover {
+    transform: scale(1.3) translateY(-5px); /* Yukarı doğru büyüme */
+    border-radius: 8px; /* Yumuşak kare */
+    transition-delay: 2s; /* 2 saniye sonra başla */
+}
+
+/* Copyright - en sağ alt */
+.footer-copyright {
+    position: absolute;
+    bottom: 10px;
+    right: 30px;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.footer-link {
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: opacity 0.3s ease;
+}
+
+.footer-link:hover {
+    opacity: 0.8;
+}
+
+/* Footer dropdown - animasyonlu açılma */
+.footer-dropdown {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) scaleY(0);
+    transform-origin: bottom;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);
+    padding: 8px 0;
+    min-width: 150px;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 100;
+    white-space: nowrap; /* Taşmayı önle */
+}
+
+.footer-dropdown.active {
+    transform: translateX(-50%) scaleY(1);
+    opacity: 1;
+}
+
+.footer-dropdown a {
+    display: block;
+    padding: 10px 20px;
+    color: #333;
+    text-decoration: none;
+    font-size: 13px;
+    transition: background 0.2s ease;
+}
+
+.footer-dropdown a:hover {
+    background: #f59e0b;
+    color: white;
+}
+
 /* Responsive - mobil cihazlar */
 @media (max-width: 768px) {
     .header-content {
@@ -227,6 +518,20 @@ body {
         width: 70%;
         max-width: 350px;
     }
+    
+    .section-content h2 {
+        font-size: 24px;
+    }
+    
+    .footer-content {
+        gap: 30px;
+        padding: 0 15px;
+    }
+    
+    .footer-label,
+    .footer-link {
+        font-size: 12px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -255,5 +560,9 @@ body {
     .background-logo {
         width: 80%;
         max-width: 280px;
+    }
+    
+    .section-content h2 {
+        font-size: 20px;
     }
 }

@@ -1,3 +1,29 @@
+<!--
+    FlowPy - Ana Sayfa Yapısı
+    =========================
+    Bu dosya sitenin iskeletini oluşturur. İçerik üç ana parçadan oluşur:
+    
+    1. Arka Plan: Canvas (ağ animasyonu) + ArkaPlanLogo.png (ortadaki logo)
+    2. Üst Çubuk: Sol logo + orta arama + sağ bölümler
+    3. Bölümler: Her bölüm ayrı bir <section> etiketiyle tanımlanır
+    
+    YENİ BÖLÜM EKLEMEK İÇİN:
+    -------------------------
+    1. Aşağıdaki <nav> bölümüne yeni bir link ekle:
+       <a href="#yeni-bolum" class="nav-link">Yeni Bölüm</a>
+    
+    2. <main> bölümüne yeni bir <section> ekle:
+       <section id="yeni-bolum" class="section">
+           <div class="section-content">
+               <h2>Yeni Bölüm</h2>
+           </div>
+       </section>
+    
+    3. script.js dosyasındaki SECTIONS listesine ekle (arama için):
+       { id: 5, name: 'Yeni Bölüm', nameEn: 'New Section', url: '#yeni-bolum' }
+    
+    Not: id değerleri benzersiz olmalı. href ve section id aynı olmalı.
+-->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -33,15 +59,85 @@
                 </div>
             </div>
             
+            <!-- Tema değiştirme butonu -->
+            <div class="theme-toggle" id="themeToggle">
+                <img src="Assets/sun.svg" alt="Tema" class="theme-icon" id="themeIcon">
+            </div>
+            
             <!-- Sağ: Bölümler -->
             <nav class="header-right">
+                <a href="#flowpy" class="nav-link">FlowPy</a>
                 <a href="#home" class="nav-link">Ana Sayfa</a>
-<a href="#executer" class="nav-link">Derleyici</a>
+                <a href="#executer" class="nav-link">Derleyici</a>
                 <a href="#about" class="nav-link">Hakkımızda</a>
                 <a href="#faq" class="nav-link">SSS</a>
             </nav>
         </div>
     </header>
+    
+    <!-- Bölüm alanları -->
+    <main class="sections">
+        <!-- FlowPy - Sadece arka plan -->
+        <section id="flowpy" class="section section-flowpy">
+            <div class="section-content">
+                <!-- Boş - sadece arka plan -->
+            </div>
+        </section>
+        
+        <!-- Ana Sayfa -->
+        <section id="home" class="section">
+            <div class="section-content">
+                <h2>Ana Sayfa</h2>
+            </div>
+        </section>
+        
+        <!-- Derleyici -->
+        <section id="executer" class="section">
+            <div class="section-content">
+                <h2>Derleyici</h2>
+            </div>
+        </section>
+        
+        <!-- Hakkımızda -->
+        <section id="about" class="section">
+            <div class="section-content">
+                <h2>Hakkımızda</h2>
+            </div>
+        </section>
+        
+        <!-- SSS -->
+        <section id="faq" class="section">
+            <div class="section-content">
+                <h2>SSS</h2>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Alt çubuk - en altta -->
+    <footer class="bottom-bar">
+        <div class="footer-content">
+            <div class="footer-item">
+                <span class="footer-label">Geliştirici:</span>
+                <img src="Assets/Logo/bercaius.png" alt="Berkay Özdemir" class="footer-logo">
+                <span class="footer-link" id="devLink">Berkay Özdemir (bercaius)</span>
+                <div class="footer-dropdown" id="devDropdown">
+                    <a href="https://github.com/bercaius" target="_blank" rel="noopener noreferrer">GitHub</a>
+                    <a href="https://www.instagram.com/bercaius.dev/" target="_blank" rel="noopener noreferrer">Instagram</a>
+                </div>
+            </div>
+            <div class="footer-item">
+                <span class="footer-label">Stüdyo:</span>
+                <img src="Assets/Logo/TurcoDevelopStudioLogo.png" alt="TurcoDevelopStudio" class="footer-logo">
+                <span class="footer-link" id="studioLink">TurcoDevelopStudio</span>
+                <div class="footer-dropdown" id="studioDropdown">
+                    <a href="https://www.instagram.com/turcodevelopstudioo/" target="_blank" rel="noopener noreferrer">Instagram</a>
+                    <a href="https://bercaius.github.io/turcodevelop-studio/" target="_blank" rel="noopener noreferrer">Web Sitesi</a>
+                </div>
+            </div>
+        </div>
+        <!-- Telif hakkı - en sağ alt -->
+        <div class="footer-copyright">© 2026 TurcoDevelopStudio</div>
+    </footer>
     
     <script src="script.js"></script>
 </body>

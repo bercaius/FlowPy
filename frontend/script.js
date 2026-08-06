@@ -1,31 +1,31 @@
-/*
- * FlowPy - Örümcek Ağı Arka Plan Sistemi
- * 
- * Bu kod, sitenin arka planında interaktif bir örümcek ağı görselleştirmesi oluşturur.
- * 
- * AMAÇ:
- * Kullanıcı deneyimini zenginleştirmek için görsel bir arka plan sağlamak.
- * Sadece görsel efekt amaçlıdır, işlevsellik etkileşimi yoktur.
- * 
- * NASIL ÇALIŞIR:
- * - Mobil: Dokunmatik takibi, turuncu ağlar, dokunma noktasına çekim
- * - Desktop: Mouse takibi, 3D derinlik efekti (içe doğru çökme)
- * - Logo koruması: Düğümler logo içine girmiyor
- * - Ekran dışı: Düğümler ekran dışına çıkabilir, görünmez olurlar
- * 
- * GÖRÜNÜM:
- * - Beyaz arka plan
- * - Turuncu ağ çizgileri (#f59e0b)
- * - Logo ortada, ağlar etrafında
- * 
- * GÜVENLIK:
- * - XSS koruması: Kullanıcı girdisi yok
- * - Değer sınırlama: Tüm sayısal değerler kontrol edilir
- * - Encapsulation: IIFE pattern ile global scope koruması
- * 
- * GELİŞTİRİCİ NOTLARI:
- * Aşağıdaki AYARLAR bölümünden tüm değerleri kolayca değiştirebilirsiniz.
- */
+ /*
+    FlowPy - Ana Script Dosyası
+    ===========================
+    Bu dosya üç ana işi yapar:
+    
+    1. Arka Plan Ağı: Canvas üzerinde turuncu örümcek ağı animasyonu
+    2. Arama: Üst çubuktaki arama kutusu ile bölüm bulma
+    3. Navigasyon: Bölümler arası geçiş ve aktif bölüm takibi
+    
+    AYARLAR:
+    --------
+    Aşağıdaki SETTINGS objesi tüm değerleri tek yerde toplar.
+    Değiştirmek istediğin değeri bulup düzenlemen yeterli.
+    
+    - nodeCount: Ağdaki düğüm sayısı (arttırınca daha yoğun ağ)
+    - nodeSpeed: Düğümlerin hareket hızı (düşük = yavaş)
+    - connectionDistance: Düğümler arası bağlantı mesafesi
+    - mouseInfluenceRadius: Mouse'un etki alanı (desktop)
+    - touchInfluenceRadius: Dokunmatik etki alanı (mobil)
+    
+    YENİ BÖLÜM EKLEMEK İÇİN:
+    -------------------------
+    1. index.html'de <nav> ve <main> bölümlerine ekle
+    2. Aşağıdaki SECTIONS listesine ekle:
+       { id: 5, name: 'Yeni Bölüm', nameEn: 'New Section', url: '#yeni-bolum' }
+    
+    Not: id benzersiz olmalı. name Türkçe, nameEn İngilizce arama için.
+*/
 
 (function() {
     'use strict';
@@ -83,6 +83,7 @@
     // ARAMA VERİLERİ - Bölümler (Türkçe + İngilizce)
     // ============================================
     const SECTIONS = [
+        { id: 0, name: 'FlowPy', nameEn: 'FlowPy', url: '#flowpy' },
         { id: 1, name: 'Ana Sayfa', nameEn: 'Home', url: '#home' },
         { id: 2, name: 'Derleyici', nameEn: 'Executer', url: '#executer' },
         { id: 3, name: 'Hakkımızda', nameEn: 'About', url: '#about' },
@@ -364,12 +365,23 @@
         searchInput.value = '';
         searchResults.classList.remove('active');
         
-        // Bölüme git
-        console.log('Navigating to:', url);
-        
-        // Demo için alert
-        alert('Bölüme gidiliyor: ' + url);
+        // Bölüme git (hash değiştir)
+        window.location.hash = url;
+        setActiveNav(url);
     }
+
+    // Aktif bölümü işaretle (alt çizgi göster)
+    function setActiveNav(url) {
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === url);
+        });
+    }
+
+    // Hash değişince aktif bölümü güncelle
+    window.addEventListener('hashchange', () => {
+        const currentHash = window.location.hash || '#flowpy';
+        setActiveNav(currentHash);
+    });
 
     // Arama inputu event listener
     if (searchInput) {
@@ -403,8 +415,9 @@
         inputX += (targetInputX - inputX) * 0.1;
         inputY += (targetInputY - inputY) * 0.1;
         
-        // Arka planı temizle
-        ctx.fillStyle = '#ffffff';
+        // Arka planı temizle (dark mode kontrolü)
+        const bgColor = document.body.classList.contains('dark-mode') ? '#1a1a1a' : '#ffffff';
+        ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Bağlantıları çiz
@@ -505,10 +518,126 @@
     });
 
     // ============================================
+    // TEMA DEĞİŞTİRME - Dark/Light mode
+    // ============================================
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    // Tema değiştir
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        
+        // Icon değiştir
+        if (document.body.classList.contains('dark-mode')) {
+            themeIcon.src = 'Assets/moon.svg';
+            localStorage.setItem('theme', 'dark');
+        } else {
+            themeIcon.src = 'Assets/sun.svg';
+            localStorage.setItem('theme', 'light');
+        }
+    }
+
+    // Tema butonu event listener
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+    }
+
+    // Sayfa yüklendiğinde kaydedilmiş temayı uygula
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        if (themeIcon) themeIcon.src = 'Assets/moon.svg';
+    }
+
+    // ============================================
+    // FOOTER DROPDOWN - İletişim Bilgileri
+    // ============================================
+    const devLink = document.getElementById('devLink');
+    const studioLink = document.getElementById('studioLink');
+    const devDropdown = document.getElementById('devDropdown');
+    const studioDropdown = document.getElementById('studioDropdown');
+
+    // Dropdown aç/kapat
+    function toggleDropdown(dropdown) {
+        // Diğer dropdown'ı kapat
+        if (dropdown === devDropdown && studioDropdown) {
+            studioDropdown.classList.remove('active');
+        }
+        if (dropdown === studioDropdown && devDropdown) {
+            devDropdown.classList.remove('active');
+        }
+        dropdown.classList.toggle('active');
+    }
+
+    if (devLink && devDropdown) {
+        devLink.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleDropdown(devDropdown);
+        });
+    }
+
+    if (studioLink && studioDropdown) {
+        studioLink.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleDropdown(studioDropdown);
+        });
+    }
+
+    // Dışarı tıklayınca kapat
+    document.addEventListener('click', () => {
+        if (devDropdown) devDropdown.classList.remove('active');
+        if (studioDropdown) studioDropdown.classList.remove('active');
+    });
+
+    // ============================================
+    // SCROLL İLE AKTİF BÖLÜM TAKİBİ
+    // ============================================
+    function updateActiveSectionOnScroll() {
+        const sections = document.querySelectorAll('.section');
+        let currentSection = '#flowpy';
+        let maxVisibleArea = 0;
+        
+        sections.forEach(section => {
+            const rect = section.getBoundingClientRect();
+            const visibleHeight = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
+            
+            if (visibleHeight > maxVisibleArea) {
+                maxVisibleArea = visibleHeight;
+                currentSection = '#' + section.id;
+            }
+        });
+        
+        setActiveNav(currentSection);
+        
+        // FlowPy bölümünde logo görünür, diğerlerinde soluk
+        document.body.classList.toggle('on-flowpy', currentSection === '#flowpy');
+    }
+
+    // ============================================
     // BAŞLAT
     // ============================================
     init();
     animate();
+    
+    // Sayfa yüklendiğinde en üste git (FlowPy bölümü)
+    window.scrollTo(0, 0);
+    
+    // Başlangıçta aktif bölümü belirle
+    const initialHash = window.location.hash || '#flowpy';
+    setActiveNav(initialHash);
+    
+    // Başlangıçta FlowPy bölümünde olduğumuzu belirt
+    document.body.classList.add('on-flowpy');
+    
+    // Nav-link tıklamalarında aktif bölümü güncelle
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            setActiveNav(link.getAttribute('href'));
+        });
+    });
+    
+    // Scroll olayında aktif bölümü güncelle
+    window.addEventListener('scroll', updateActiveSectionOnScroll);
 
     // ============================================
     // YARDIMCI FONKSİYONLAR
