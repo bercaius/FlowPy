@@ -34,7 +34,7 @@
     <meta name="keywords" content="FlowPy, Python, FlowingTR, akış diyagramı, derleyici, Teknofest, görsel programlama, açık beta">
     <meta name="author" content="TurcoDevelopStudio">
     <meta name="robots" content="index, follow">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; font-src 'self'; object-src 'none'; frame-ancestors 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https:; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://formspree.io; font-src 'self'; object-src 'none'; frame-ancestors 'none';">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta name="referrer" content="no-referrer-when-downgrade">
     <meta property="og:title" content="FlowPy - Python & FlowingTR Derleyici">
@@ -55,6 +55,8 @@
     <link rel="icon" type="image/webp" sizes="16x16" href="Assets/Logo/Logo.webp">
     <link rel="apple-touch-icon" sizes="180x180" href="Assets/Logo/Logo.webp">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/pyodide/v314.0.4/full/pyodide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
 </head>
 <body>
     <!-- Arka plan ağ görselleştirmesi -->
@@ -88,8 +90,15 @@
                 <img src="Assets/sun.svg" alt="Tema" class="theme-icon" id="themeIcon">
             </div>
             
+            <!-- Mobil menü butonu -->
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menü">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
             <!-- Sağ: Bölümler -->
-            <nav class="header-right">
+            <nav class="header-right" id="headerRight">
                 <a href="#flowpy" class="nav-link">FlowPy</a>
                 <a href="#home" class="nav-link">Ana Sayfa</a>
                 <a href="#executer" class="nav-link">Derleyici</a>
@@ -134,7 +143,75 @@
         <!-- Derleyici -->
         <section id="executer" class="section">
             <div class="section-content">
-                <h2>Derleyici</h2>
+                <div class="compiler-wrapper">
+                    <div class="compiler-banner">
+                        <span class="banner-icon">&#9888;</span>
+                        <span class="banner-text">Bu derleyici tamamen sizin <strong>local bilgisayarınızda</strong> çalışır. Hiçbir kod sunucumuza gönderilmez.</span>
+                    </div>
+                    
+                    <div class="compiler-toolbar">
+                        <div class="toolbar-left">
+                            <button class="toolbar-btn toolbar-btn-primary" id="btnRun" title="Çalıştır">
+                                <span class="btn-icon">&#9654;</span> Çalıştır
+                            </button>
+                            <button class="toolbar-btn" id="btnSync" title="Senkronize Et">
+                                <span class="btn-icon">&#8635;</span> Senkronize
+                            </button>
+                        </div>
+                        <div class="toolbar-center">
+                            <div class="file-tabs" id="fileTabs">
+                                <div class="file-tab active" data-file="main.py">
+                                    <span class="file-name">main.py</span>
+                                    <button class="file-close">&times;</button>
+                                </div>
+                            </div>
+                            <button class="toolbar-btn toolbar-btn-small" id="btnNewFile" title="Yeni Dosya">+</button>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="toolbar-btn" id="btnReport" title="Hata Bildir">
+                                <span class="btn-icon">&#9993;</span> Hata Bildir
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="compiler-panels">
+                        <div class="panel panel-ide">
+                            <div class="panel-header">
+                                <span class="panel-title">Python IDE</span>
+                                <span class="panel-status" id="ideStatus">Hazır</span>
+                            </div>
+                            <div class="panel-body">
+                                <textarea id="codeEditor" class="code-editor" spellcheck="false" placeholder="# Python kodunuzu buraya yazın&#10;# Örnek:&#10;def merhaba():&#10;    print('Merhaba FlowPy!')&#10;&#10;merhaba()"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="panel-divider"></div>
+                        
+                        <div class="panel panel-flow">
+                            <div class="panel-header">
+                                <span class="panel-title">FlowingTR Flowchart</span>
+                                <span class="panel-status" id="flowStatus">Bekliyor</span>
+                            </div>
+                            <div class="panel-body">
+                                <div class="flow-canvas" id="flowCanvas">
+                                    <div class="flow-placeholder">
+                                        <div class="flow-placeholder-icon">&#128204;</div>
+                                        <p>Kodunuz çalıştırıldığında akış diyagramı burada görünecek</p>
+                                        <p class="flow-placeholder-sub">Python kodunu yazın ve Çalıştır'a basın</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="compiler-output" id="outputPanel">
+                        <div class="output-header">
+                            <span class="output-title">Çıktı</span>
+                            <button class="output-clear" id="btnClearOutput">Temizle</button>
+                        </div>
+                        <pre class="output-body" id="outputBody"><span class="output-text">FlowPy derleyici hazır. Kodunuzu yazın ve Çalıştır'a basın.</span></pre>
+                    </div>
+                </div>
             </div>
         </section>
         
@@ -187,6 +264,19 @@
         <!-- Telif hakkı - en sağ alt -->
         <div class="footer-copyright">© 2026 TurcoDevelopStudio</div>
     </footer>
+    
+    <!-- Hata Bildir Modal -->
+    <div class="modal-overlay" id="reportModal">
+        <div class="modal">
+            <h3 class="modal-title">Hata Bildir</h3>
+            <p class="modal-desc">Karşılaştığınız hatayı detaylı bir şekilde açıklayın. Otomatik olarak berkayozdemirtrtr@gmail.com adresine iletilir.</p>
+            <textarea class="modal-textarea" id="reportText" placeholder="Hata açıklaması, tekrarlama adımları, beklenen ve gerçekleşen sonuç..."></textarea>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-secondary" id="btnCancelReport">İptal</button>
+                <button class="modal-btn modal-btn-primary" id="btnSendReport">Gönder</button>
+            </div>
+        </div>
+    </div>
     
     <script src="script.js"></script>
 </body>
