@@ -614,10 +614,65 @@
     }
 
     // ============================================
+    // FAQ ACCORDION - SSS Bölümü
+    // ============================================
+    // Soruları buradan kolayca değiştirin
+    const FAQ_ITEMS = [
+        {
+            question: 'Karanlık ve aydınlık mod ne işe yarar nasıl açılır?',
+            answer: 'Karanlık mod, gece kullanımında göz yorgunluğunu azaltır ve daha az enerji tüketir. Üst çubuğun sağ tarafındaki güneş/ay simgesine tıklayarak açılır/kapatılır. Tercihiniz localStorage\'da saklanır.'
+        },
+        {
+            question: 'Bu site ne işe yarar?',
+            answer: 'FlowPy, Python kodlarını görsel akış diyagramlarına dönüştüren ve derleyen bir geliştirme aracıdır. Kod yazmayı ve akışları görselleştirmeyi birleştirir.'
+        },
+        {
+            question: 'TurcoDevelopStudio nedir necededir?',
+            answer: 'TurcoDevelopStudio, Türkçe geliştirici topluluğu ve açık kaynak projeler geliştiren bir yazılım stüdyosudur. Berkay Özdemir (bercaius) ve BrahimTKM (İbrahim Talha Kömürcü) tarafından kurulmuştur.'
+        },
+        {
+            question: 'Derleyiciyi yaparken hangi kütüphaneleri kullandınız?',
+            answer: 'Python\'un built-in ast modülünü ve sys modülünü kullandık. Ayrıca özel dönüştürücüler geliştirdik.'
+        },
+        {
+            question: 'Derleyicide bir hata olursa hangi eposta adresinden iletişime geçebilirim?',
+            answer: 'turcodevelop@gmail.com adresinden bizimle iletişime geçebilirsiniz.'
+        },
+        {
+            question: 'Sitedeki Deneme modu tam sürümmü yoksa tam teşekküllü bir sürümde var mı?',
+            answer: 'Evet, sitede deneme sürümü bulunmaktadır. Tam sürümde ek özellikler ve daha gelişmiş derleyici bulunmaktadır.'
+        }
+    ];
+
+    // FAQ Accordion'ı oluştur
+    function initFAQAccordion() {
+        const accordion = document.getElementById('faqAccordion');
+        if (!accordion) return;
+        
+        accordion.innerHTML = FAQ_ITEMS.map(item => `
+            <div class="accordion-item">
+                <div class="accordion-header">${item.question}</div>
+                <div class="accordion-content">
+                    <p>${item.answer}</p>
+                </div>
+            </div>
+        `).join('');
+        
+        // Accordion tıklama olayları
+        accordion.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const item = header.parentElement;
+                item.classList.toggle('active');
+            });
+        });
+    }
+
+    // ============================================
     // BAŞLAT
     // ============================================
     init();
     animate();
+    initFAQAccordion();
     
     // Sayfa yüklendiğinde en üste git (FlowPy bölümü)
     window.scrollTo(0, 0);
