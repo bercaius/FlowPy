@@ -1,29 +1,3 @@
-<!--
-    FlowPy - Ana Sayfa Yapısı
-    =========================
-    Bu dosya sitenin iskeletini oluşturur. İçerik üç ana parçadan oluşur:
-    
-    1. Arka Plan: Canvas (ağ animasyonu) + ArkaPlanLogo.webp (ortadaki logo)
-    2. Üst Çubuk: Sol logo + orta arama + sağ bölümler
-    3. Bölümler: Her bölüm ayrı bir <section> etiketiyle tanımlanır
-    
-    YENİ BÖLÜM EKLEMEK İÇİN:
-    -------------------------
-    1. Aşağıdaki <nav> bölümüne yeni bir link ekle:
-       <a href="#yeni-bolum" class="nav-link">Yeni Bölüm</a>
-    
-    2. <main> bölümüne yeni bir <section> ekle:
-       <section id="yeni-bolum" class="section">
-           <div class="section-content">
-               <h2>Yeni Bölüm</h2>
-           </div>
-       </section>
-    
-    3. script.js dosyasındaki SECTIONS listesine ekle (arama için):
-       { id: 5, name: 'Yeni Bölüm', nameEn: 'New Section', url: '#yeni-bolum' }
-    
-    Not: id değerleri benzersiz olmalı. href ve section id aynı olmalı.
--->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -31,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FlowPy</title>
     <meta name="description" content="FlowPy, Python kodlarını görsel akış diyagramlarına dönüştüren ve FlowingTR formatında derleyen Teknofest projesi. Açık beta, ücretsiz deneme sürümü.">
-    <meta name="keywords" content="FlowPy, Python, FlowingTR, akış diyagramı, derleyici, Teknofest, görsel programlama, açık beta">
+    <meta name="keywords" content="FlowPy, Python, FlowingTR, akış diyagramı, derleyici, Teknofest, görsel programlama, açık beta, Jupyter, Pyodide, numpy, matplotlib">
     <meta name="author" content="TurcoDevelopStudio">
     <meta name="robots" content="index, follow">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https:; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://formspree.io https://cdn.jsdelivr.net; font-src 'self'; object-src 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https:; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://formspree.io https://cdn.jsdelivr.net https://pypi.org; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; object-src 'none';">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta name="referrer" content="no-referrer-when-downgrade">
     <meta property="og:title" content="FlowPy - Python & FlowingTR Derleyici">
@@ -55,9 +29,43 @@
     <link rel="icon" type="image/webp" sizes="16x16" href="Assets/Logo/Logo.webp">
     <link rel="apple-touch-icon" sizes="180x180" href="Assets/Logo/Logo.webp">
     <link rel="stylesheet" href="styles.css">
+    <!-- CodeMirror - Jupyter benzeri kod editörü -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/idea.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/eclipse.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.css">
     <script src="https://cdn.jsdelivr.net/pyodide/v314.0.4/full/pyodide.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/continuelist.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldcode.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/indent-fold.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/python-hint.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/search.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/searchcursor.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/jump-to-line.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/autorefresh.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/placeholder.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/fullscreen.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/scroll/simplescrollbars.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/scroll/scrollpastend.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/mark-selection.min.js" defer></script>
+    <script>window.mermaid = { startOnLoad: false, theme: 'default', flowchart: { useMaxWidth: false, htmlLabels: true } };</script>
 </head>
 <body>
     <!-- Arka plan ağ görselleştirmesi -->
@@ -103,6 +111,7 @@
                 <a href="#flowpy" class="nav-link">FlowPy</a>
                 <a href="#home" class="nav-link">Ana Sayfa</a>
                 <a href="#executer" class="nav-link">Derleyici</a>
+                <a href="#flowingtr" class="nav-link">FlowingTR</a>
                 <a href="#about" class="nav-link">Hakkımızda</a>
                 <a href="#faq" class="nav-link">SSS</a>
             </nav>
@@ -143,11 +152,11 @@
         
         <!-- Derleyici -->
         <section id="executer" class="section">
-            <div class="section-content">
+            <div class="section-content section-content-wide">
                 <div class="compiler-wrapper">
                     <div class="compiler-banner">
                         <span class="banner-icon">&#9888;</span>
-                        <span class="banner-text">Bu derleyici tamamen sizin <strong>local bilgisayarınızda</strong> çalışır. Hiçbir kod sunucumuza gönderilmez.</span>
+                        <span class="banner-text">Bu derleyici tamamen sizin <strong>local bilgisayarınızda</strong> çalışır. Hiçbir kod sunucumuza gönderilmez. Pyodide ile tarayıcıda Python çalıştırılır.</span>
                     </div>
                     
                     <div class="compiler-toolbar">
@@ -158,17 +167,20 @@
                             <button class="toolbar-btn" id="btnSync" title="Senkronize Et">
                                 <span class="btn-icon">&#8635;</span> Senkronize
                             </button>
+                            <button class="toolbar-btn" id="btnStop" title="Durdur">
+                                <span class="btn-icon">&#9632;</span> Durdur
+                            </button>
                         </div>
                         <div class="toolbar-center">
                             <div class="file-tabs" id="fileTabs">
-                                <div class="file-tab active" data-file="main.py">
-                                    <span class="file-name">main.py</span>
-                                    <button class="file-close">&times;</button>
-                                </div>
+                                <!-- File tabs JS ile doldurulacak -->
                             </div>
                             <button class="toolbar-btn toolbar-btn-small" id="btnNewFile" title="Yeni Dosya">+</button>
                         </div>
                         <div class="toolbar-right">
+                            <button class="toolbar-btn" id="btnLibraries" title="Kütüphaneler">
+                                <span class="btn-icon">&#128270;</span> Kütüphaneler
+                            </button>
                             <button class="toolbar-btn" id="btnReport" title="Hata Bildir">
                                 <span class="btn-icon">&#9993;</span> Hata Bildir
                             </button>
@@ -183,7 +195,7 @@
                                     <button class="workspace-btn" id="btnNewFolder" title="Yeni Klasör">&#128193;</button>
                                     <button class="workspace-btn" id="btnNewFileWS" title="Yeni Dosya">&#128196;</button>
                                     <button class="workspace-btn" id="btnExportZip" title="ZIP Olarak Dışarı Çıkar">&#128230;</button>
-                                    <button class="workspace-btn" id="btnImportZip" title="ZIP İçeri Aktar">&#128230;</button>
+                                    <button class="workspace-btn" id="btnImportZip" title="ZIP İçeri Aktar">&#128229;</button>
                                     <input type="file" id="zipInput" accept=".zip" style="display: none;">
                                 </div>
                             </div>
@@ -193,41 +205,68 @@
                         </div>
                         <div class="workspace-divider"></div>
                         <div class="compiler-panels">
-                        <div class="panel panel-ide">
-                            <div class="panel-header">
-                                <span class="panel-title">Python IDE</span>
-                                <span class="panel-status" id="ideStatus">Hazır</span>
+                            <div class="panel panel-ide">
+                                <div class="panel-header">
+                                    <span class="panel-title">Python IDE</span>
+                                    <div class="panel-header-right">
+                                        <span class="panel-status" id="ideStatus">Hazır</span>
+                                        <button class="panel-btn" id="btnFullscreen" title="Tam Ekran">&#128470;</button>
+                                    </div>
+                                </div>
+                                <div class="panel-body">
+                                    <textarea id="codeEditor" class="code-editor" spellcheck="false" placeholder="# Python kodunuzu buraya yazın&#10;# Örnek:&#10;def merhaba():&#10;    print('Merhaba FlowPy!')&#10;&#10;merhaba()"></textarea>
+                                </div>
                             </div>
-                            <div class="panel-body">
-                                <textarea id="codeEditor" class="code-editor" spellcheck="false" placeholder="# Python kodunuzu buraya yazın&#10;# Örnek:&#10;def merhaba():&#10;    print('Merhaba FlowPy!')&#10;&#10;merhaba()"></textarea>
-                            </div>
-                        </div>
-                        
-                        <div class="panel-divider"></div>
-                        
-                        <div class="panel panel-flow">
-                            <div class="panel-header">
-                                <span class="panel-title">FlowingTR Flowchart</span>
-                                <span class="panel-status" id="flowStatus">Bekliyor</span>
-                            </div>
-                            <div class="panel-body">
-                                <div class="flow-canvas" id="flowCanvas">
-                                    <div class="flow-placeholder">
-                                        <div class="flow-placeholder-icon">&#128204;</div>
-                                        <p>Kodunuz çalıştırıldığında akış diyagramı burada görünecek</p>
-                                        <p class="flow-placeholder-sub">Python kodunu yazın ve Çalıştır'a basın</p>
+                            
+                            <div class="panel-divider"></div>
+                            
+                            <div class="panel panel-flow">
+                                <div class="panel-header">
+                                    <span class="panel-title">FlowingTR Flowchart</span>
+                                    <span class="panel-status" id="flowStatus">Bekliyor</span>
+                                </div>
+                                <div class="panel-body">
+                                    <div class="flow-canvas" id="flowCanvas">
+                                        <div class="flow-placeholder">
+                                            <div class="flow-placeholder-icon">&#128204;</div>
+                                            <p>Kodunuz çalıştırıldığında akış diyagramı burada görünecek</p>
+                                            <p class="flow-placeholder-sub">Python kodunu yazın ve Çalıştır'a basın</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="compiler-output" id="outputPanel">
-                        <div class="output-header">
-                            <span class="output-title">Çıktı</span>
-                            <button class="output-clear" id="btnClearOutput">Temizle</button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- FlowingTR - Genişletilmiş bölüm -->
+        <section id="flowingtr" class="section section-flowingtr">
+            <div class="section-content section-content-wide">
+                <h2>FlowingTR Görsel Diyagram</h2>
+                <p class="flowingtr-description">Python kodunuza göre oluşturulmuş akış diyagramı. Diagramı düzenleyerek Python kodunu da güncelleyebilirsiniz. Web tabanlı FlowingTR motoru ile oluşturulur.</p>
+                <div class="flowingtr-wrapper">
+                    <div class="flowingtr-controls">
+                        <button class="toolbar-btn" id="btnExportMermaid" title="Mermaid kodu kopyala">
+                            <span class="btn-icon">&#128203;</span> Mermaid Kodu
+                        </button>
+                        <button class="toolbar-btn" id="btnExportSvg" title="SVG olarak dışa aktar">
+                            <span class="btn-icon">&#128230;</span> SVG
+                        </button>
+                        <button class="toolbar-btn" id="btnExportPng" title="PNG olarak dışa aktar">
+                            <span class="btn-icon">&#128230;</span> PNG
+                        </button>
+                        <span class="panel-status" id="flowingtrStatus">Senkiz</span>
+                    </div>
+                    <div class="flowingtr-canvas-container">
+                        <div class="flowingtr-canvas" id="flowingtrDiagram">
+                            <div class="flow-placeholder">
+                                <div class="flow-placeholder-icon">&#128204;</div>
+                                <p>Akış diyagramı burada görünecek. Önce Derleyici sekmesine gidin ve kodunuzu çalıştırın.</p>
+                                <p class="flow-placeholder-sub">Python kodu -> Senkronize -> FlowingTR diyagramı</p>
+                            </div>
                         </div>
-                        <pre class="output-body" id="outputBody"><span class="output-text">FlowPy derleyici hazır. Kodunuzu yazın ve Çalıştır'a basın.</span></pre>
                     </div>
                 </div>
             </div>
@@ -283,6 +322,37 @@
         <div class="footer-copyright">© 2026 TurcoDevelopStudio</div>
     </footer>
     
+    <!-- Konsol - Alt kısımda, tam genişlik, aşağıya uzanan -->
+    <div class="console-bottom" id="consolePanel">
+        <div class="output-header">
+            <span class="output-title">Çıktı</span>
+            <div class="output-controls">
+                <button class="output-clear" id="btnClearOutput" title="Temizle">Temizle</button>
+                <button class="output-toggle" id="btnToggleOutput" title="Küçült">
+                    <span class="toggle-icon">_</span>
+                </button>
+            </div>
+        </div>
+        <pre class="output-body" id="outputBody">
+            <span class="output-text">FlowPy derleyici hazır. Kodunuzu yazın ve Çalıştır'a basın.</span>
+        </pre>
+        <div class="output-resizer" id="outputResizer"></div>
+    </div>
+    
+    <!-- Kütüphane Seçimi Modal -->
+    <div class="modal-overlay" id="libModal">
+        <div class="modal modal-wide">
+            <h3 class="modal-title">Pyodide Kütüphaneleri</h3>
+            <p class="modal-desc">Tarayıcınızda çalıştırmak üzere kütüphaneler yükleyin. Yüklenenler yeşil işaretle gösterilir.</p>
+            <div class="lib-grid" id="libGrid">
+                <!-- Kütüphane listesi JS ile doldurulacak -->
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-secondary" id="btnCancelLib">İptal</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Hata Bildir Modal -->
     <div class="modal-overlay" id="reportModal">
         <div class="modal">
@@ -305,6 +375,19 @@
             <div class="modal-actions">
                 <button class="modal-btn modal-btn-secondary" id="btnCancelNewFile">İptal</button>
                 <button class="modal-btn modal-btn-primary" id="btnCreateNewFile">Oluştur</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Yeni Klasör Modal -->
+    <div class="modal-overlay" id="newFolderModal">
+        <div class="modal">
+            <h3 class="modal-title">Yeni Klasör</h3>
+            <p class="modal-desc">Klasör adı girin.</p>
+            <input type="text" class="modal-input" id="newFolderName" placeholder="örnek: proje" autocomplete="off">
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-secondary" id="btnCancelNewFolder">İptal</button>
+                <button class="modal-btn modal-btn-primary" id="btnCreateNewFolder">Oluştur</button>
             </div>
         </div>
     </div>
