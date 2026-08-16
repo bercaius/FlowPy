@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 Disallow: /Assets/
-Sitemap: https://flowpy.app/sitemap.xml
+Sitemap: https://bercaius.github.io/FlowPy/sitemap.xml
