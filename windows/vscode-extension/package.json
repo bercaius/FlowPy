@@ -1,0 +1,124 @@
+{
+  "name": "flowpy",
+  "displayName": "FlowPy",
+  "description": "FlowPy Python IDE bridge: real syntax highlighting, live flowchart generation and code execution over the FlowPy WebSocket bridge.",
+  "version": "1.0.0",
+  "publisher": "TurcoDevelopStudio",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "python",
+    "flowchart",
+    "flowpy",
+    "turcodevelopstudio",
+    "ide"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bercaius"
+  },
+  "homepage": "https://bercaius.github.io/turcodevelop-studio/",
+  "author": {
+    "name": "Berkay Özdemir",
+    "url": "https://bercaius.github.io/turcodevelop-studio/"
+  },
+  "activationEvents": [
+    "onCommand:flowpy.generateFlowchart",
+    "onCommand:flowpy.runCode",
+    "onCommand:flowpy.sendToFlowPy",
+    "onCommand:flowpy.openFlowPy",
+    "onLanguage:flowpy"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "flowpy",
+        "aliases": [
+          "FlowPy",
+          "flowpy"
+        ],
+        "extensions": [
+          ".pyflow",
+          ".flowpy"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "flowpy",
+        "scopeName": "source.flowpy",
+        "path": "./syntaxes/flowpy.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "flowpy.generateFlowchart",
+        "title": "FlowPy: Generate Flowchart"
+      },
+      {
+        "command": "flowpy.runCode",
+        "title": "FlowPy: Run Code in FlowPy"
+      },
+      {
+        "command": "flowpy.sendToFlowPy",
+        "title": "FlowPy: Send Active File to FlowPy"
+      },
+      {
+        "command": "flowpy.openFlowPy",
+        "title": "FlowPy: Open FlowPy Website"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "flowpy.generateFlowchart",
+          "when": "editorLangId == python || editorLangId == flowpy",
+          "group": "flowpy@1"
+        },
+        {
+          "command": "flowpy.runCode",
+          "when": "editorLangId == python || editorLangId == flowpy",
+          "group": "flowpy@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "FlowPy",
+      "properties": {
+        "flowpy.bridgeHost": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "FlowPy WebSocket bridge host."
+        },
+        "flowpy.bridgePort": {
+          "type": "number",
+          "default": 18809,
+          "description": "FlowPy WebSocket bridge port."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "FlowPy",
+  "scopeName": "source.flowpy",
+  "fileTypes": ["pyflow", "flowpy"],
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#triple-double" },
+    { "include": "#triple-single" },
+    { "include": "#string-double" },
+    { "include": "#string-single" },
+    { "include": "#decorator" },
+    { "include": "#class-def" },
+    { "include": "#function-def" },
+    { "include": "#number" },
+    { "include": "#keyword" },
+    { "include": "#builtin" },
+    { "include": "#operator" }
+  ],
+  "repository": {
+    "comment": {
+      "name": "comment.line.number-sign.flowpy",
+      "begin": "#",
+      "end": "$",
+      "patterns": [
+        {
+          "name": "keyword.other.todo.flowpy",
+          "match": "\\b(TODO|FIXME|XXX|HACK|NOTE)\\b"
+        }
+      ]
+    },
+    "triple-double": {
+      "name": "string.quoted.double.doc.flowpy",
+      "begin": "\"\"\"",
+      "end": "\"\"\"",
+      "patterns": [{ "include": "#escapes" }]
+    },
+    "triple-single": {
+      "name": "string.quoted.single.doc.flowpy",
+      "begin": "'''",
+      "end": "'''",
+      "patterns": [{ "include": "#escapes" }]
+    },
+    "string-double": {
+      "name": "string.quoted.double.flowpy",
+      "begin": "(?i)([rRfFbBuU]{0,2})(\")",
+      "beginCaptures": {
+        "1": { "name": "storage.type.string.prefix.flowpy" },
+        "2": { "name": "punctuation.definition.string.begin.flowpy" }
+      },
+      "end": "(\")",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.string.end.flowpy" }
+      },
+      "patterns": [{ "include": "#escapes" }, { "include": "#fstring" }]
+    },
+    "string-single": {
+      "name": "string.quoted.single.flowpy",
+      "begin": "(?i)([rRfFbBuU]{0,2})(')",
+      "beginCaptures": {
+        "1": { "name": "storage.type.string.prefix.flowpy" },
+        "2": { "name": "punctuation.definition.string.begin.flowpy" }
+      },
+      "end": "(')",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.string.end.flowpy" }
+      },
+      "patterns": [{ "include": "#escapes" }, { "include": "#fstring" }]
+    },
+    "escapes": {
+      "name": "constant.character.escape.flowpy",
+      "match": "\\\\(n|t|r|b|f|v|0|\\\\|'|\"|a|e)|\\\\x[0-9a-fA-F]{2}|\\\\u[0-9a-fA-F]{4}|\\\\U[0-9a-fA-F]{8}|\\\\[0-7]{1,3}"
+    },
+    "fstring": {
+      "name": "meta.embedded.expression.flowpy",
+      "begin": "\\{",
+      "end": "\\}",
+      "patterns": [
+        { "include": "#number" },
+        { "include": "#keyword" },
+        { "include": "#builtin" }
+      ]
+    },
+    "decorator": {
+      "name": "meta.decorator.flowpy",
+      "begin": "^\\s*(@)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.decorator.flowpy" }
+      },
+      "end": "$",
+      "patterns": [
+        {
+          "name": "entity.name.function.decorator.flowpy",
+          "match": "[A-Za-z_][A-Za-z0-9_.]*"
+        }
+      ]
+    },
+    "class-def": {
+      "name": "meta.class.flowpy",
+      "begin": "\\b(class)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "beginCaptures": {
+        "1": { "name": "keyword.other.class.flowpy" },
+        "2": { "name": "entity.name.class.flowpy" }
+      },
+      "end": "(:)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.class.flowpy" }
+      },
+      "patterns": [
+        {
+          "name": "entity.other.inherited-class.flowpy",
+          "begin": "\\(",
+          "end": "\\)",
+          "patterns": [
+            { "name": "entity.other.inherited-class.flowpy", "match": "[A-Za-z_][A-Za-z0-9_]*" }
+          ]
+        }
+      ]
+    },
+    "function-def": {
+      "name": "meta.function.flowpy",
+      "begin": "\\b(def)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "beginCaptures": {
+        "1": { "name": "keyword.other.function.flowpy" },
+        "2": { "name": "entity.name.function.flowpy" }
+      },
+      "end": "(:)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.function.flowpy" }
+      },
+      "patterns": [
+        {
+          "name": "meta.function.parameters.flowpy",
+          "begin": "\\(",
+          "end": "\\)",
+          "patterns": [
+            {
+              "name": "variable.parameter.flowpy",
+              "match": "[A-Za-z_][A-Za-z0-9_]*"
+            },
+            {
+              "name": "keyword.operator.flowpy",
+              "match": "[\\*=]"
+            }
+          ]
+        }
+      ]
+    },
+    "number": {
+      "name": "constant.numeric.flowpy",
+      "match": "(?i)\\b(0[xX][0-9a-fA-F]+|0[oO][0-7]+|0[bB][01]+|\\d+(_\\d+)*(\\.\\d+)?([eE][+-]?\\d+)?[jJ]?)\\b"
+    },
+    "keyword": {
+      "name": "keyword.control.flowpy",
+      "match": "\\b(if|elif|else|for|while|try|except|finally|with|lambda|match|case|async|await|return|yield|pass|break|continue|raise|assert|global|nonlocal|del|import|from|as)\\b"
+    },
+    "builtin": {
+      "name": "support.function.builtin.flowpy",
+      "match": "\\b(print|len|range|input|open|str|int|float|bool|list|dict|set|tuple|enumerate|zip|map|filter|sorted|sum|min|max|abs|round|type|isinstance|super|format|repr|getattr|setattr|hasattr|staticmethod|classmethod|property|object|Exception|ValueError|TypeError|IndexError|KeyError|FileNotFoundError|ZeroDivisionError)\\b"
+    },
+    "operator": {
+      "match": "\\b(and|or|not|in|is)\\b",
+      "name": "keyword.operator.flowpy"
+    }
+  }
+}
