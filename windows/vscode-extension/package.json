@@ -24,10 +24,10 @@
     "type": "git",
     "url": "https://github.com/bercaius"
   },
-  "homepage": "https://bercaius.github.io/turcodevelop-studio/",
+  "homepage": "https://turcodevelopstudio.netlify.app",
   "author": {
     "name": "Berkay Özdemir",
-    "url": "https://bercaius.github.io/turcodevelop-studio/"
+    "url": "https://turcodevelopstudio.netlify.app"
   },
   "activationEvents": [
     "onCommand:flowpy.generateFlowchart",

@@ -53,4 +53,4 @@ vscode-extension/
 ```
 
 Marka: TurcoDevelopStudio · Geliştirici: Berkay Özdemir ·
-<https://bercaius.github.io/turcodevelop-studio/>
+<https://turcodevelopstudio.netlify.app>

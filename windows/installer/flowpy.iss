@@ -9,7 +9,7 @@
   #define AppVersion    "1.0.0"
 #endif
 #define AppPublisher    "TurcoDevelopStudio"
-#define AppURL          "https://bercaius.github.io/turcodevelop-studio/"
+#define AppURL          "https://turcodevelopstudio.netlify.app"
 #define AppExeName      "FlowPy.exe"
 
 [Setup]

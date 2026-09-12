@@ -260,7 +260,7 @@ async function sendToFlowPy(client: FlowPyClient): Promise<void> {
 }
 
 function openFlowPy(): void {
-    vscode.env.openExternal(vscode.Uri.parse('https://bercaius.github.io/turcodevelop-studio/'));
+    vscode.env.openExternal(vscode.Uri.parse('https://turcodevelopstudio.netlify.app'));
 }
 
 export function activate(context: vscode.ExtensionContext): void {

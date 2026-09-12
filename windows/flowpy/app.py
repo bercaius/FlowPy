@@ -28,7 +28,7 @@ APP_VERSION = "1.0.0"
 APP_ORGANIZATION = "TurcoDevelopStudio"
 APP_DOMAIN = "turcodevelopstudio.com"
 APP_AUTHOR = "Berkay Özdemir"
-APP_URL = "https://bercaius.github.io/turcodevelop-studio/"
+APP_URL = "https://turcodevelopstudio.netlify.app"
 
 # ---------------------------------------------------------------------------
 # Logging setup

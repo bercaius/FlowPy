@@ -4,7 +4,7 @@
 integrated, live-updating flowchart view. Write code in the editor and watch
 the flowchart panel sync in real time.
 
-**Developed by [TurcoDevelopStudio](https://bercaius.github.io/turcodevelop-studio/)**
+**Developed by [TurcoDevelopStudio](https://turcodevelopstudio.netlify.app)**
 © Berkay Özdemir — [@bercaius](https://github.com/bercaius)
 
 ---
