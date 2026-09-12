@@ -1,17 +1,15 @@
-"""File tree — simple project file browser."""
+"""File tree — clean modern file browser."""
 
 from __future__ import annotations
 
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import QDir, QSortFilterProxyModel, Signal, Qt
+from PySide6.QtCore import QSortFilterProxyModel, Qt, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QHBoxLayout,
-    QLabel,
     QLineEdit,
-    QPushButton,
     QTreeView,
     QVBoxLayout,
     QWidget,
@@ -21,14 +19,18 @@ logger = logging.getLogger(__name__)
 
 
 class FileTree(QWidget):
-    """Project file tree with search."""
+    """Clean modern file tree."""
 
-    fileOpened = Signal(Path)
+    fileOpened: Signal = Signal(Path)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._root = Path.cwd()
         self._model = QStandardItemModel(self)
+        self._proxy = QSortFilterProxyModel(self)
+        self._proxy.setSourceModel(self._model)
+        self._proxy.setRecursiveFilteringEnabled(True)
+        self._proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self._build()
 
     def _build(self) -> None:
@@ -37,16 +39,19 @@ class FileTree(QWidget):
         layout.setSpacing(4)
 
         self.search = QLineEdit()
-        self.search.setPlaceholderText("Dosya ara…")
-        self.search.textChanged.connect(self._filter)
+        self.search.setPlaceholderText("Dosya ara...")
+        self.search.textChanged.connect(self._on_search_changed)
         layout.addWidget(self.search)
 
         self.tree = QTreeView()
-        self.tree.setModel(self._model)
+        self.tree.setModel(self._proxy)
         self.tree.setHeaderHidden(True)
-        self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.tree.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
         self.tree.doubleClicked.connect(self._on_double)
         layout.addWidget(self.tree)
+
+    def _on_search_changed(self, text: str) -> None:
+        self._proxy.setFilterFixedString(text)
 
     def set_root(self, path: Path) -> None:
         self._root = Path(path)
@@ -67,13 +72,9 @@ class FileTree(QWidget):
         except PermissionError:
             pass
 
-    def _filter(self, text: str) -> None:
-        # Simple filter: hide non-matching items
-        # In a real app, use QSortFilterProxyModel
-        pass
-
     def _on_double(self, index) -> None:
-        item = self._model.itemFromIndex(index)
+        source_index = self._proxy.mapToSource(index)
+        item = self._model.itemFromIndex(source_index)
         if item is None:
             return
         path = item.data(Qt.ItemDataRole.UserRole)

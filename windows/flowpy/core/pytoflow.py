@@ -841,3 +841,57 @@ def graph_to_python(graph: FlowGraph, indent: int = 4) -> str:
     parse(entry_child, end_id, 0)
     return "\n".join(out) + ("\n" if out else "")
 
+    def graph_to_code(self, graph: FlowGraph) -> str:
+        nodes = {n.id: n for n in graph.nodes}
+        edges = list(graph.edges)
+        out: list[str] = []
+        visited: set[str] = set()
+
+        def emit_node(nid: str, indent: int = 0) -> None:
+            if nid in visited:
+                return
+            visited.add(nid)
+            node = nodes.get(nid)
+            if node is None:
+                return
+            pad = "    " * indent
+            code = (node.code or node.label or "").strip()
+            if node.kind == "terminator":
+                return
+            if node.kind == "decision":
+                cond = code[3:] if code.startswith("if ") else code
+                out.append(f"{pad}if {cond}:")
+                succs = [e.dst for e in edges if e.src == nid]
+                if len(succs) >= 1:
+                    emit_node(succs[0], indent + 1)
+                if len(succs) >= 2:
+                    out.append(f"{pad}else:")
+                    emit_node(succs[1], indent + 1)
+                return
+            if node.kind == "preparation":
+                if code.startswith("for "):
+                    parts = code.split(" ", 1)
+                    var = parts[1].split(" in ")[0] if " in " in parts[1] else "x"
+                    iterable = parts[1].split(" in ")[1] if " in " in parts[1] else "range(10)"
+                    out.append(f"{pad}for {var} in {iterable}:")
+                elif code.startswith("while "):
+                    out.append(f"{pad}{code}:")
+                else:
+                    out.append(f"{pad}{code}")
+                succs = [e.dst for e in edges if e.src == nid and e.label == "Evet"]
+                if succs:
+                    emit_node(succs[0], indent + 1)
+                return
+            if code:
+                out.append(f"{pad}{code}")
+            succs = [e.dst for e in edges if e.src == nid and e.label != "Hayır"]
+            if len(succs) == 1:
+                emit_node(succs[0], indent)
+
+        start = next((n for n in graph.nodes if n.kind == "terminator" and n.label == "Başla"), graph.nodes[0] if graph.nodes else None)
+        if start is not None:
+            succs = [e.dst for e in edges if e.src == start.id]
+            if succs:
+                emit_node(succs[0], 0)
+        return "\n".join(out) + ("\n" if out else "")
+

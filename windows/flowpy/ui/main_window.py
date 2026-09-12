@@ -1,4 +1,4 @@
-"""Main window — professional IDE layout with all components."""
+"""Main window — tier-1 professional IDE layout."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QTimer, Qt
+from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
@@ -15,6 +16,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QListWidget,
     QListWidgetItem,
+    QMenuBar,
     QMessageBox,
     QPushButton,
     QSplitter,
@@ -27,12 +29,9 @@ from ..core import pytoflow
 from ..core.project import Project, Vault
 from ..core.settings import Settings
 from ..core.services import Services
-from ..plugins.manager import PluginManager
 from ..resources.icons import icon
-from .crash_reporter import CrashReporterDialog
 from .file_tree import FileTree
 from .flowchart_view import FlowChartView
-from .plugins_dialog import PluginsDialog
 from .project_dialog import NewProjectDialog
 from .sidebar import SideBar
 from .status_bar import StatusBar
@@ -40,6 +39,8 @@ from .tab_manager import TabManager
 from .terminal import Terminal
 from .title_bar import TitleBar
 from .toolbar import ToolBar
+from .welcome_page import WelcomePage
+from .block_editor import BlockEditorWidget
 
 if TYPE_CHECKING:
     from flowpy.app import FlowPyWindow
@@ -48,35 +49,43 @@ logger = logging.getLogger(__name__)
 
 
 class _About(QDialog):
-    """Professional About dialog with brand assets."""
+    """Professional about dialog."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("FlowPy Hakkında")
+        self.setWindowTitle("Hakkında")
         self.setModal(True)
-        self.resize(440, 280)
+        self.resize(420, 300)
         lay = QVBoxLayout(self)
-        lay.setSpacing(12)
+        lay.setSpacing(16)
 
         from ..resources.icons import brand_logo_text
         logo = QLabel()
-        logo.setPixmap(brand_logo_text(200))
+        logo_pixmap = brand_logo_text(160)
+        if not logo_pixmap.isNull():
+            logo.setPixmap(logo_pixmap)
         logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lay.addWidget(logo)
-        lay.addWidget(QLabel(
-            "<p style='color:#c9d1d9;font-size:14px'>Professional Python IDE with Live Flowchart View</p>"
-        ))
-        lay.addWidget(QLabel(
-            "<p style='color:#8b949e;font-size:12px'>"
-            "Sürüm 1.0.0<br>"
-            "Geliştirici: Berkay Özdemir<br>"
-            "TurcoDevelopStudio<br>"
-            "MIT Lisans<br>"
-            "<br>"
-            "FlowPy, Python projelerinizi yönetmeniz, akış şemaları oluşturmanız "
-            "ve derlemeniz için tasarlanmış profesyonel bir masaüstü uygulamasıdır."
+
+        desc = QLabel(
+            "<p style='color:#0078d4;font-size:16px;font-weight:600;'>"
+            "FlowPy v1.0.0"
             "</p>"
-        ))
+        )
+        desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lay.addWidget(desc)
+
+        info = QLabel(
+            "<p style='color:#cccccc;font-size:12px;line-height:1.7;'>"
+            "Professional Python IDE with Live Flowchart<br>"
+            "Developed by Berkay Özdemir<br>"
+            "TurcoDevelopStudio<br>"
+            "MIT License"
+            "</p>"
+        )
+        info.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        info.setWordWrap(True)
+        lay.addWidget(info)
 
         btn = QPushButton("Kapat")
         btn.setObjectName("PrimaryBtn")
@@ -85,14 +94,13 @@ class _About(QDialog):
 
 
 class MainWindow(QWidget):
-    """Main application window — professional IDE layout."""
+    """Tier-1 professional main application window."""
 
     def __init__(self, services: Services | None = None) -> None:
         super().__init__()
         self.services = None
         self.settings = Settings()
         self.vault = Vault()
-        self.plugin_manager = PluginManager()
 
         self._project: Project | None = None
         self._active_editor = None
@@ -100,15 +108,20 @@ class MainWindow(QWidget):
         self._sync_timer = QTimer()
         self._sync_timer.setSingleShot(True)
         self._sync_timer.timeout.connect(self._sync_flowchart)
+        self._dark_mode = self.settings.dark_mode
+        self._compile_status = "ready"  # ready, compiling, error, warning
+        self._block_mode = False
 
+        self._apply_theme()
         self._restore_window_state()
         self._build()
+        self._setup_shortcuts()
 
         if services is not None:
             self.attach_services(services)
 
     def attach_services(self, services: Services) -> None:
-        """Uygulama omurgasını köprüye bağla (JSON-RPC: kod/akış/çalıştır)."""
+        """Connect application backbone bridge."""
         self.services = services
         services.attach(
             get_code=self.get_active_code,
@@ -139,16 +152,65 @@ class MainWindow(QWidget):
         }
         self.settings.window_geometry = geo
 
+    def _setup_shortcuts(self) -> None:
+        QShortcut("Ctrl+N", self).activated.connect(self._new_project)
+        QShortcut("Ctrl+O", self).activated.connect(self._open_project_dialog)
+        QShortcut("Ctrl+S", self).activated.connect(self._save)
+        QShortcut("F5", self).activated.connect(self._run)
+        QShortcut("Ctrl+Shift+S", self).activated.connect(self._save)
+
+    def _apply_theme(self) -> None:
+        qss_path = Path(__file__).resolve().parent.parent / "resources" / ("styles.qss" if self._dark_mode else "styles-light.qss")
+        if qss_path.exists():
+            self.setStyleSheet(qss_path.read_text(encoding="utf-8"))
+
+    def _toggle_theme(self) -> None:
+        self._dark_mode = not self._dark_mode
+        self.settings.dark_mode = self._dark_mode
+        self._apply_theme()
+        self.title.theme_btn.setIcon(icon("sun" if self._dark_mode else "moon", "#ffffff", 14))
+
+    def _toggle_block_mode(self, checked: bool) -> None:
+        self._block_mode = checked
+        self.editor_splitter.setVisible(not checked)
+        self.block_editor.setVisible(checked)
+        if checked:
+            self._on_block_code_changed(self.block_editor.generate_code())
+
+    def _build_menu(self) -> None:
+        file_menu = self.menu_bar.addMenu("Dosya")
+        file_menu.addAction("Yeni Proje", self._new_project)
+        file_menu.addAction("Proje Aç", self._open_project_dialog)
+        file_menu.addAction("Kaydet", self._save)
+        file_menu.addSeparator()
+        file_menu.addAction("Çıkış", self.close)
+
+        view_menu = self.menu_bar.addMenu("Görünüm")
+        view_menu.addAction("Çalışma Alanı", lambda: self._nav(0))
+        view_menu.addAction("Projeler", lambda: self._nav(1))
+        view_menu.addAction("Dosyalar", lambda: self._nav(2))
+        view_menu.addAction("Ayarlar", lambda: self._nav(3))
+
+        help_menu = self.menu_bar.addMenu("Yardım")
+        help_menu.addAction("Hakkında", lambda: _About(self).exec())
+
     # ---- kurulum ----
     def _build(self) -> None:
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
+        # Menu bar
+        self.menu_bar = QMenuBar()
+        self.menu_bar.setObjectName("MenuBar")
+        self._build_menu()
+        root.setMenuBar(self.menu_bar)
+
         self.title = TitleBar(self)
         self.title.min_btn.clicked.connect(self.showMinimized)
         self.title.max_btn.clicked.connect(self._toggle_max)
         self.title.close_btn.clicked.connect(self.close)
+        self.title.theme_btn.clicked.connect(self._toggle_theme)
         root.addWidget(self.title)
 
         self.toolbar = ToolBar()
@@ -157,10 +219,8 @@ class MainWindow(QWidget):
         self.toolbar.save.connect(self._save)
         self.toolbar.run.connect(self._run)
         self.toolbar.stop.connect(self._stop)
-        self.toolbar.sync.connect(self._sync_flowchart)
-        self.toolbar.export.connect(self._export)
-        self.toolbar.plugins.connect(lambda: self._open_plugins_dialog())
         self.toolbar.more.connect(lambda: _About(self).exec())
+        self.toolbar.blockModeToggled.connect(self._toggle_block_mode)
         root.addWidget(self.toolbar)
 
         self.sidebar = SideBar()
@@ -173,10 +233,12 @@ class MainWindow(QWidget):
         body.addWidget(self.sidebar)
 
         self.stack = QStackedWidget()
+        self._welcome = WelcomePage(self)
         self._workspace = self._build_workspace()
         self._projects = self._build_projects()
         self._files = self._build_files()
         self._settings = self._build_settings()
+        self.stack.addWidget(self._welcome)
         self.stack.addWidget(self._workspace)
         self.stack.addWidget(self._projects)
         self.stack.addWidget(self._files)
@@ -189,6 +251,7 @@ class MainWindow(QWidget):
         root.addWidget(self.status)
 
         self._open_first_project()
+        self._nav(0)
 
     def _build_workspace(self) -> QWidget:
         w = QWidget()
@@ -202,19 +265,29 @@ class MainWindow(QWidget):
 
         self.terminal = Terminal()
 
-        left = QSplitter(Qt.Orientation.Vertical)
-        left.addWidget(self.tabs)
-        left.addWidget(self.terminal)
-        left.setStretchFactor(0, 3)
-        left.setStretchFactor(1, 1)
+        self.editor_container = QWidget()
+        ed_lay = QVBoxLayout(self.editor_container)
+        ed_lay.setContentsMargins(0, 0, 0, 0)
+        ed_lay.setSpacing(0)
+
+        self.editor_splitter = QSplitter(Qt.Orientation.Vertical)
+        self.editor_splitter.addWidget(self.tabs)
+        self.editor_splitter.addWidget(self.terminal)
+        self.editor_splitter.setStretchFactor(0, 3)
+        self.editor_splitter.setStretchFactor(1, 1)
+        ed_lay.addWidget(self.editor_splitter, 1)
 
         self.flow = FlowChartView()
         self.flow.nodeClicked.connect(self._on_node_clicked)
         self.flow.nodeDoubleClicked.connect(self._on_node_edit)
-        self.flow.graphToPython.connect(self._convert_flow_to_python)
+
+        self.block_editor = BlockEditorWidget()
+        self.block_editor.codeChanged.connect(self._on_block_code_changed)
+        self.block_editor.setVisible(False)
+        ed_lay.addWidget(self.block_editor, 1)
 
         main = QSplitter(Qt.Orientation.Horizontal)
-        main.addWidget(left)
+        main.addWidget(self.editor_container)
         main.addWidget(self.flow)
         main.setStretchFactor(0, 1)
         main.setStretchFactor(1, 1)
@@ -227,14 +300,14 @@ class MainWindow(QWidget):
         v.setContentsMargins(18, 18, 18, 18)
         v.setSpacing(10)
         head = QHBoxLayout()
-        head.addWidget(QLabel("<h3 style='color:#c9d1d9;margin:0'>Projeler</h3>"))
+        head.addWidget(QLabel("<h3 style='color:#0078d4;margin:0'>Projeler</h3>"))
         head.addStretch(1)
         new = QPushButton("Yeni Proje")
         new.setObjectName("PrimaryBtn")
         new.clicked.connect(self._new_project)
         head.addWidget(new)
         v.addLayout(head)
-        v.addWidget(QLabel("<span style='color:#8b949e'>Kasanızdaki projeler.</span>"))
+        v.addWidget(QLabel("<span style='color:#888888'>Kasanızdaki projeler.</span>"))
         self.project_list = QListWidget()
         self.project_list.itemDoubleClicked.connect(self._on_project_item)
         v.addWidget(self.project_list, 1)
@@ -253,11 +326,11 @@ class MainWindow(QWidget):
         w = QWidget()
         v = QVBoxLayout(w)
         v.setContentsMargins(18, 18, 18, 18)
-        v.addWidget(QLabel("<h3 style='color:#c9d1d9'>Ayarlar</h3>"))
-        v.addWidget(QLabel("<span style='color:#8b949e'>Tema: Koyu (varsayılan)</span>"))
-        v.addWidget(QLabel("<span style='color:#8b949e'>Dil: Türkçe</span>"))
+        v.addWidget(QLabel("<h3 style='color:#0078d4'>Ayarlar</h3>"))
+        v.addWidget(QLabel("<span style='color:#888888'>Tema: Koyu (varsayılan)</span>"))
+        v.addWidget(QLabel("<span style='color:#888888'>Dil: Türkçe</span>"))
         v.addWidget(QLabel(
-            "<span style='color:#8b949e'>Tüm projeleriniz AppData/FlowPy altında saklanır.</span>"
+            "<span style='color:#888888'>Tüm projeleriniz AppData/FlowPy altında saklanır.</span>"
         ))
         v.addStretch(1)
         return w
@@ -269,7 +342,8 @@ class MainWindow(QWidget):
             proj = self.vault.create_project("Hoş Geldiniz", "İlk FlowPy projenizi burada başlatın.")
             projects = [proj]
         self._refresh_project_list()
-        self._open_project(projects[0])
+        if projects:
+            self._open_project(projects[0])
 
     def _refresh_project_list(self) -> None:
         self.project_list.clear()
@@ -294,7 +368,10 @@ class MainWindow(QWidget):
             entry = proj.folder / "main.py"
         if entry.exists():
             self.tabs.open_file(entry)
-        self._sync_flowchart()
+        else:
+            self.tabs.open_code("# FlowPy projenizi buraya yazın\n", title="main.py")
+        self._schedule_sync()
+        self._nav(0)
 
     def _new_project(self) -> None:
         dlg = NewProjectDialog(self.vault, self)
@@ -351,20 +428,42 @@ class MainWindow(QWidget):
         if not is_python:
             self.status.set_ready("Akış şeması yalnızca Python için")
             return
-        graph, err = pytoflow.FlowBuilder().build(code)
+
+        self._compile_status = "compiling"
+        self.status.set_ready("Derleniyor...")
+        self.status.set_compile_status("compiling")
+        QApplication.processEvents()
+
+        try:
+            graph, err = pytoflow.FlowBuilder().build(code)
+        except Exception as exc:
+            logger.exception("Flowchart build failed")
+            graph, err = pytoflow.FlowGraph(), exc
         if err is not None:
+            self._compile_status = "error"
             self.status.set_ready("Sözdizimi hatası")
+            self.status.set_compile_status("error")
             self.status.set_stats(errors=1)
             return
-        graph = pytoflow.layout_graph(graph)
-        self.flow.set_graph(graph)
-        self._last_graph = graph
-        if self.services is not None:
-            self.services.notify_graph(graph)
-        self.status.set_ready("Ready")
+        try:
+            graph = pytoflow.layout_graph(graph)
+            self.flow.set_graph(graph)
+            self._last_graph = graph
+        except Exception as exc:
+            logger.exception("Flowchart layout failed")
+            self._compile_status = "error"
+            self.status.set_ready("Akış şeması hata")
+            self.status.set_compile_status("error")
+            return
+
+        self._compile_status = "ready"
+        self.status.set_compile_status("ready")
+        self.status.set_ready("Hazır")
         self.status.set_stats(
-            errors=graph.errors, warnings=graph.warnings,
-            nodes=len(graph.nodes), lines=len(code.splitlines()),
+            errors=getattr(graph, "errors", 0),
+            warnings=getattr(graph, "warnings", 0),
+            nodes=len(getattr(graph, "nodes", [])),
+            lines=len(code.splitlines()),
         )
 
     def _on_node_clicked(self, line: int) -> None:
@@ -375,8 +474,6 @@ class MainWindow(QWidget):
             self.flow.select_node_by_line(line)
 
     def _on_node_edit(self, line: int, code: str) -> None:
-        """Flowchart düğümüne çift tık: kodunu editöre getir, kaydolduğunda
-        flowchart otomatik yeniden senkronize olur (_schedule_sync)."""
         ed = self._active_editor
         if ed is None:
             self.tabs.open_code(code)
@@ -385,22 +482,12 @@ class MainWindow(QWidget):
             ed.setPlainText(code)
             self._schedule_sync()
 
-    def _convert_flow_to_python(self) -> None:
-        """Flowchart → Python: grafiği Python metnine dönüştür, editöre yapıştır."""
-        py = self.flow.to_python()
-        if not py.strip():
-            self.status.set_ready("Akış şeması boş")
-            return
-        self.set_active_code(py)
-        self.status.set_ready("Flowchart → Python")
-
     # ---- servis köprüsü yardımcıları ----
     def get_active_code(self) -> str:
         ed = self.tabs.current_editor()
         return ed.toPlainText() if ed is not None else ""
 
     def set_active_code(self, code: str) -> None:
-        """Köprüden gelen kodu aktif editöre yaz (veya yeni sekme aç)."""
         ed = self.tabs.current_editor()
         if ed is not None:
             ed.setPlainText(code)
@@ -428,16 +515,43 @@ class MainWindow(QWidget):
             return
         self.terminal.run_file(p)
 
-     # ---- çalıştır / kaydet / dışa aktar ----
+    def _on_block_code_changed(self, code: str) -> None:
+        if not code.strip():
+            return
+        try:
+            graph, err = pytoflow.FlowBuilder().build(code)
+            if err is not None:
+                self.status.set_ready("Sözdizimi hatası")
+                self.status.set_compile_status("error")
+                self.status.set_stats(errors=1)
+                return
+            graph = pytoflow.layout_graph(graph)
+            self.flow.set_graph(graph)
+            self._last_graph = graph
+            self.status.set_compile_status("ready")
+            self.status.set_ready("Hazır")
+            self.status.set_stats(
+                errors=getattr(graph, "errors", 0),
+                warnings=getattr(graph, "warnings", 0),
+                nodes=len(getattr(graph, "nodes", [])),
+                lines=len(code.splitlines()),
+            )
+        except Exception as exc:
+            logger.exception("Block code sync failed")
+            self.status.set_ready("Akış şeması hata")
+
     def _run(self) -> None:
+        if self._block_mode:
+            code = self.block_editor.generate_code()
+            if code.strip():
+                self.terminal.run_code(code)
+            return
         ed = self.tabs.current_editor()
         path = self.tabs.current_path()
         if not path:
-            # Kaydedilmemiş tampon: geçici dosyaya kaydet, gerçek yorumlayıcı çalıştır
             if ed is not None:
                 self.terminal.run_code(ed.toPlainText())
             return
-        # Kaydedilmemişse önce kaydet
         self.tabs.save_current()
         self.terminal.run_file(Path(path))
 
@@ -446,40 +560,24 @@ class MainWindow(QWidget):
 
     def _save(self) -> None:
         self.tabs.save_current()
-        if self._project and self.tabs.current_path():
-            self._project.entry = Path(self.tabs.current_path()).name
+        path = self.tabs.current_path()
+        if self._project and path:
+            self._project.entry = Path(path).name
             self._project.save_meta()
-
-    def _export(self) -> None:
-        path, _ = QFileDialog.getSaveFileName(self, "PNG olarak dışa aktar", "flowchart.png", "PNG (*.png)")
-        if not path:
-            return
-        try:
-            from PySide6.QtGui import QImage, QPainter
-            rect = self.flow.scene().sceneRect().toRect()
-            img = QImage(rect.size(), QImage.Format.Format_ARGB32)
-            img.fill(0)
-            painter = QPainter(img)
-            self.flow.scene().render(painter)
-            painter.end()
-            img.save(path)
-            self.status.set_ready("Dışa aktarıldı")
-        except Exception as exc:
-            QMessageBox.warning(self, "Hata", str(exc))
-
-    # ---- eklentiler ----
-    def _open_plugins_dialog(self) -> None:
-        dlg = PluginsDialog(self.services, self)
-        dlg.exec()
 
     # ---- navigasyon ----
     def _nav(self, idx: int) -> None:
-        if idx in (0, 1):
-            self.stack.setCurrentIndex(0)
-        elif idx == 2:
-            self.stack.setCurrentIndex(1)
-        elif idx == 3:
+        if idx == 0:
+            if self._project is not None:
+                self.stack.setCurrentIndex(1)
+            else:
+                self.stack.setCurrentIndex(0)
+        elif idx == 1:
             self.stack.setCurrentIndex(2)
+        elif idx == 2:
+            self.stack.setCurrentIndex(3)
+        elif idx == 3:
+            self.stack.setCurrentIndex(4)
         self.sidebar.set_active(idx)
 
     def _toggle_max(self) -> None:

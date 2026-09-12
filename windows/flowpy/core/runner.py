@@ -13,7 +13,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QProcess, Signal
+from PySide6.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 
 
 def _python_executable() -> str:
@@ -38,10 +38,10 @@ def _python_executable() -> str:
     return sys.executable
 
 
-def _utf8_env() -> dict[str, str]:
-    env = dict(os.environ)
-    env["PYTHONIOENCODING"] = "utf-8"
-    env["PYTHONUTF8"] = "1"
+def _utf8_env() -> QProcessEnvironment:
+    env = QProcessEnvironment.systemEnvironment()
+    env.insert("PYTHONIOENCODING", "utf-8")
+    env.insert("PYTHONUTF8", "1")
     return env
 
 
@@ -94,9 +94,6 @@ class Runner(QObject):
         proc.finished.connect(self._on_finished)
         self.proc = proc
         proc.start(command[0], command[1:])
-        if not proc.waitForStarted(3000):
-            self.errored.emit("[FlowPy] Süreç başlatılamadı.")
-            self.finished.emit(-1)
 
     def _on_finished(self, code: int, _status) -> None:
         self._cleanup_temp()

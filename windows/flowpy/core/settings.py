@@ -92,3 +92,11 @@ class Settings:
     @enabled_plugins.setter
     def enabled_plugins(self, value: list[str]) -> None:
         self.set_value("plugins/enabled", ",".join(value))
+
+    @property
+    def dark_mode(self) -> bool:
+        return self.get_json("dark_mode", True)
+
+    @dark_mode.setter
+    def dark_mode(self, value: bool) -> None:
+        self.set_json("dark_mode", value)

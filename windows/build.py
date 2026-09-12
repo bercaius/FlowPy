@@ -130,6 +130,9 @@ def _run_pyinstaller(
 
 def _stage_support_files() -> None:
     for source_dir, dest_dir in STAGED_DIRECTORIES:
+        if not source_dir.exists():
+            print(f"[WARN] Skipping missing source directory: {source_dir}")
+            continue
         if dest_dir.exists():
             shutil.rmtree(dest_dir)
         shutil.copytree(
@@ -139,6 +142,9 @@ def _stage_support_files() -> None:
         )
 
     for source_file, dest_file in STAGED_FILES:
+        if not source_file.exists():
+            print(f"[WARN] Skipping missing source file: {source_file}")
+            continue
         dest_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source_file, dest_file)
 

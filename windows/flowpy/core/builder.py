@@ -50,7 +50,7 @@ class BuildConfig:
     uac_uiaccess: bool = False
     debug: bool = False
 
-    auto_install: bool = True
+    auto_install: bool = False
     extra_args: str = ""
 
 

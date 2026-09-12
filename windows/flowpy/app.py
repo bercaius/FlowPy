@@ -1,14 +1,4 @@
-"""FlowPy application entrypoint — professional startup sequence.
-
-FlowPy, TurcoDevelopStudio tarafından geliştirilen profesyonel bir Python IDE'dir.
-Başlangıç sırası:
-1. Uygulama metadata'sı (marka, sürüm, organizasyon)
-2. Loglama (rotating file + console)
-3. Global exception hook (çöküş raporu)
-4. Splash screen (logo ile)
-5. Ana pencere
-6. Event loop
-"""
+"""FlowPy application entrypoint — clean modern startup."""
 
 from __future__ import annotations
 
@@ -18,7 +8,7 @@ import traceback
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from PySide6.QtCore import QSize, Qt, QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -31,7 +21,7 @@ from PySide6.QtWidgets import (
 from flowpy.ui.main_window import MainWindow
 
 # ---------------------------------------------------------------------------
-# Application metadata — TurcoDevelopStudio / FlowPy brand
+# Application metadata
 # ---------------------------------------------------------------------------
 APP_NAME = "FlowPy"
 APP_VERSION = "1.0.0"
@@ -41,20 +31,29 @@ APP_AUTHOR = "Berkay Özdemir"
 APP_URL = "https://bercaius.github.io/turcodevelop-studio/"
 
 # ---------------------------------------------------------------------------
-# Logging setup — professional rotating file + console
+# Logging setup
 # ---------------------------------------------------------------------------
 _LOG_DIR = (
     Path.home() / "AppData" / "Roaming" / "TurcoDevelopStudio" / "FlowPy" / "logs"
 )
-_LOG_DIR.mkdir(parents=True, exist_ok=True)
-_LOG_FILE = _LOG_DIR / "flowpy.log"
 
 
 def _setup_logging() -> None:
+    global _LOG_DIR, _LOG_FILE
     fmt = logging.Formatter(
         "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+
+    try:
+        _LOG_DIR.mkdir(parents=True, exist_ok=True)
+    except PermissionError:
+        import tempfile
+        _LOG_DIR = Path(tempfile.gettempdir()) / "FlowPy" / "logs"
+        _LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+    _LOG_FILE = _LOG_DIR / "flowpy.log"
+
     fh = RotatingFileHandler(
         _LOG_FILE, maxBytes=10_000_000, backupCount=5, encoding="utf-8"
     )
@@ -74,7 +73,7 @@ def _setup_logging() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Exception handling — crash reporter
+# Exception handling
 # ---------------------------------------------------------------------------
 def _global_exception_hook(exc_type, exc_value, exc_tb) -> None:
     logger = logging.getLogger("flowpy")
@@ -94,7 +93,7 @@ def _global_exception_hook(exc_type, exc_value, exc_tb) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Splash screen — brand logo ile
+# Splash screen
 # ---------------------------------------------------------------------------
 class _SplashWidget(QWidget):
     """Branded splash screen widget."""
@@ -102,31 +101,37 @@ class _SplashWidget(QWidget):
     def __init__(self, parent: QSplashScreen) -> None:
         super().__init__(parent)
         lay = QVBoxLayout(self)
-        lay.setContentsMargins(32, 32, 32, 32)
-        lay.setSpacing(8)
+        lay.setContentsMargins(40, 40, 40, 40)
+        lay.setSpacing(12)
 
         from flowpy.resources.icons import brand_logo_text
         logo = QLabel()
-        logo.setPixmap(brand_logo_text(220))
-        logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        logo_pixmap = brand_logo_text(180)
+        if not logo_pixmap.isNull():
+            logo.setPixmap(logo_pixmap)
+            logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        else:
+            logo.setText("FlowPy")
+            logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            logo.setStyleSheet("font-size: 36px; font-weight: 700; color: #f59e0b;")
         lay.addWidget(logo)
 
         sub = QLabel(f"v{APP_VERSION}  ·  Professional Python IDE")
-        sub.setStyleSheet("color:#8b949e;font-size:12px;")
+        sub.setStyleSheet("color:#f59e0b;font-size:13px;")
         lay.addWidget(sub)
 
         author = QLabel(f"by {APP_AUTHOR}  ·  {APP_ORGANIZATION}")
-        author.setStyleSheet("color:#484f58;font-size:10px;")
+        author.setStyleSheet("color:#888888;font-size:11px;")
         lay.addWidget(author)
         lay.addStretch(1)
 
 
 def _show_splash() -> tuple[QSplashScreen, _SplashWidget]:
-    pixmap = QPixmap(480, 240)
-    pixmap.fill(Qt.GlobalColor.transparent)
+    pixmap = QPixmap(520, 260)
+    pixmap.fill(Qt.GlobalColor.white)
     splash = QSplashScreen(pixmap, Qt.WindowType.SplashScreen)
     widget = _SplashWidget(splash)
-    widget.resize(480, 240)
+    widget.resize(520, 260)
     splash.show()
     QApplication.processEvents()
     return splash, widget
@@ -149,19 +154,10 @@ def main() -> int:
     app.setOrganizationName(APP_ORGANIZATION)
     app.setOrganizationDomain(APP_DOMAIN)
 
-    # Professional dark theme (resources/styles.qss) — uygulamanın tamamına uygula
-    _qss_path = Path(__file__).resolve().parent / "resources" / "styles.qss"
-    if _qss_path.exists():
-        try:
-            app.setStyleSheet(_qss_path.read_text(encoding="utf-8"))
-            logging.info("Tema uygulandı: %s", _qss_path.name)
-        except Exception as exc:
-            logging.warning("Tema uygulanamadı: %s", exc)
-
     splash, _ = _show_splash()
 
     splash.showMessage(
-        "Ana pencere hazırlanıyor...",
+        "Loading...",
         Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter,
     )
     QApplication.processEvents()
@@ -169,7 +165,7 @@ def main() -> int:
     window = MainWindow()
     window.setWindowTitle(f"{APP_NAME} v{APP_VERSION} — {APP_ORGANIZATION}")
 
-    # Servis omurgasını başlat (eklenti yöneticisi + WebSocket köprüsü)
+    # Start services
     from flowpy.core.services import Services
 
     services = Services()
@@ -177,7 +173,7 @@ def main() -> int:
     services.start()
 
     splash.showMessage(
-        "Başlatılıyor...",
+        "Starting...",
         Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter,
     )
     QApplication.processEvents()

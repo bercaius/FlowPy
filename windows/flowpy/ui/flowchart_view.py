@@ -1,13 +1,9 @@
-"""Flowchart view — professional, large, high-contrast nodes.
-
-Node sizes: 220×90 px, bold labels, hover glow, icons.
-Colors: WCAG AA compliant dark theme.
-"""
+"""Flowchart view — professional IDE flowchart with compile/run integration."""
 
 from __future__ import annotations
 
 import math
-from PySide6.QtCore import QLineF, QPointF, QRectF, Qt, QTimer, Signal
+from PySide6.QtCore import QLineF, QPointF, QRectF, QSize, Qt, QTimer, Signal, QPoint
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -22,31 +18,23 @@ from PySide6.QtWidgets import (
     QGraphicsScene,
     QGraphicsView,
     QPushButton,
+    QToolButton,
     QVBoxLayout,
     QWidget,
-)
-from PySide6.QtCore import (
-    QLineF,
-    QPointF,
-    QRectF,
-    Qt,
-    QTimer,
-    Signal,
-    QPoint,
 )
 
 from ..core.pytoflow import FlowGraph
 
-# ISO 5807 / ANSI X3.5 renk paleti (WCAG AA uyumlu, yüksek kontrast)
+# Professional color palette
 KIND_COLOR = {
-    "terminator":  "#2ea043",  # Başla (yeşil)
-    "process":     "#8b949e",  # İşlem (gri)
-    "decision":    "#d29922",  # Karar (amber)
-    "io":          "#2f81f7",  # Girdi/Çıktı (mavi)
-    "subroutine":  "#a371f7",  # Önceden tanımlı işlem (mor)
-    "preparation": "#58a6ff",  # Hazırlık (açık mavi)
-    "merge":       "#6e7681",  # Birleştirme (gri)
-    "connector":   "#6e7681",  # Bağlayıcı (gri)
+    "terminator":  "#0078d4",
+    "process":     "#569cd6",
+    "decision":    "#c586c0",
+    "io":          "#4ec9b0",
+    "subroutine":  "#dcdcaa",
+    "preparation": "#ce9178",
+    "merge":       "#888888",
+    "connector":   "#888888",
 }
 
 KIND_ICON = {
@@ -60,32 +48,38 @@ KIND_ICON = {
     "connector":   "●",
 }
 
-# Düğüm boyutları (px)
-SIZE_STANDARD = (220, 90)
-SIZE_SMALL = (48, 48)  # merge / connector
+BASE_NODE_W = 220
+BASE_NODE_H = 80
+MIN_SCALE = 0.3
+MAX_SCALE = 3.0
 
 
 class NodeItem(QGraphicsItem):
-    """Professional flowchart node — large, high-contrast, readable."""
+    """Professional flowchart node."""
 
-    def __init__(self, node) -> None:
+    def __init__(self, node, scale: float = 1.0) -> None:
         super().__init__()
         self.node = node
         self.kind = node.kind
-        # Başla/Bitiş ayırt etmek için etikete bak
         if node.kind == "terminator":
-            self.base_color = QColor("#da3633") if node.label == "Bitiş" else QColor(KIND_COLOR["terminator"])
+            self.base_color = QColor("#dc2626") if node.label == "Bitiş" else QColor(KIND_COLOR["terminator"])
         else:
-            self.base_color = QColor(KIND_COLOR.get(node.kind, "#8b949e"))
+            self.base_color = QColor(KIND_COLOR.get(self.kind, "#569cd6"))
         self.small = node.kind in ("merge", "connector")
-        self.w, self.h = SIZE_SMALL if self.small else SIZE_STANDARD
+        self._scale = scale
+        self.w = (48 if self.small else BASE_NODE_W) * scale
+        self.h = (48 if self.small else BASE_NODE_H) * scale
         self.setPos(node.x - self.w / 2, node.y - self.h / 2)
-        self.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
+        self.setFlags(
+            QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+            | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable
+            | QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
+        )
         self.setAcceptHoverEvents(True)
         self._hover = False
 
     def boundingRect(self) -> QRectF:
-        pad = 8
+        pad = 6 * self._scale
         return QRectF(-pad, -pad, self.w + 2 * pad, self.h + 2 * pad)
 
     def paint(self, painter, option, widget) -> None:
@@ -98,34 +92,25 @@ class NodeItem(QGraphicsItem):
         # Hover/selection glow
         if self._hover or self.isSelected():
             glow = QColor(self.base_color)
-            glow.setAlpha(60)
-            painter.setPen(QPen(glow, 4))
+            glow.setAlpha(100)
+            painter.setPen(QPen(glow, 3 * self._scale))
             painter.setBrush(QBrush(Qt.BrushStyle.NoBrush))
             painter.drawPath(shape)
 
         # Main fill
-        painter.setPen(QPen(self.base_color, 2.4))
-        painter.setBrush(QBrush(QColor("#161b22")))
+        painter.setPen(QPen(self.base_color, 2 * self._scale))
+        painter.setBrush(QBrush(QColor("#2d2d2d")))
         painter.drawPath(shape)
 
-        # Küçük düğümler (merge / connector) yalnızca daire
         if self.small:
             return
 
-        # Alt-yordam çift kenar görseli
-        if self.kind == "subroutine":
-            inner = QRectF(rect.x() + 6, rect.y() + 6, rect.width() - 12, rect.height() - 12)
-            path2 = QPainterPath()
-            path2.addRoundedRect(inner, 10, 10)
-            painter.setPen(QPen(self.base_color, 1.2))
-            painter.drawPath(path2)
-
         # Icon
-        icon = KIND_ICON.get(self.kind, "")
+        icon_text = KIND_ICON.get(self.kind, "")
         painter.setPen(self.base_color)
-        painter.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
-        icon_rect = QRectF(12, 8, 32, 32)
-        painter.drawText(icon_rect, Qt.AlignCenter, icon)
+        painter.setFont(QFont("Segoe UI", int(14 * self._scale), QFont.Weight.Bold))
+        icon_rect = QRectF(10 * self._scale, 8 * self._scale, 28 * self._scale, 28 * self._scale)
+        painter.drawText(icon_rect, Qt.AlignCenter, icon_text)
 
         # Title
         title = self.node.label or self.kind.capitalize()
@@ -134,23 +119,23 @@ class NodeItem(QGraphicsItem):
         second_line = " ".join(words[1:]) if len(words) > 1 else ""
 
         painter.setPen(QColor("#ffffff"))
-        painter.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
-        title_rect = QRectF(52, 6, self.w - 62, 24)
+        painter.setFont(QFont("Segoe UI", int(11 * self._scale), QFont.Weight.Bold))
+        title_rect = QRectF(46 * self._scale, 6 * self._scale, self.w - 56 * self._scale, 22 * self._scale)
         painter.drawText(title_rect, Qt.AlignVCenter | Qt.AlignLeft, self._elide(first_line, title_rect, painter))
 
         # Subtitle
         if second_line:
-            painter.setPen(QColor("#c9d1d9"))
-            painter.setFont(QFont("Segoe UI", 11))
-            sub_rect = QRectF(52, 30, self.w - 62, 20)
+            painter.setPen(QColor("#cccccc"))
+            painter.setFont(QFont("Segoe UI", int(10 * self._scale)))
+            sub_rect = QRectF(46 * self._scale, 28 * self._scale, self.w - 56 * self._scale, 18 * self._scale)
             painter.drawText(sub_rect, Qt.AlignVCenter | Qt.AlignLeft, self._elide(second_line, sub_rect, painter))
 
         # Line number
         if self.node.line:
-            painter.setPen(QColor("#484f58"))
-            painter.setFont(QFont("Segoe UI", 9))
-            info_rect = QRectF(12, self.h - 20, self.w - 24, 16)
-            painter.drawText(info_rect, Qt.AlignRight | Qt.AlignVCenter, f"Ln {self.node.line}")
+            painter.setPen(QColor("#888888"))
+            painter.setFont(QFont("Segoe UI", int(9 * self._scale)))
+            info_rect = QRectF(10 * self._scale, self.h - 18 * self._scale, self.w - 20 * self._scale, 14 * self._scale)
+            painter.drawText(info_rect, Qt.AlignRight | Qt.AlignVCenter, f"L{self.node.line}")
 
     def _shape_path(self, rect: QRectF) -> QPainterPath:
         w, h = rect.width(), rect.height()
@@ -172,7 +157,7 @@ class NodeItem(QGraphicsItem):
             path.closeSubpath()
             return path
         if self.kind == "io":
-            skew = 24
+            skew = 20 * self._scale
             path = QPainterPath()
             path.moveTo(skew, 0)
             path.lineTo(w, 0)
@@ -192,7 +177,7 @@ class NodeItem(QGraphicsItem):
             path.closeSubpath()
             return path
         path = QPainterPath()
-        path.addRoundedRect(rect, 14, 14)
+        path.addRoundedRect(rect, 10 * self._scale, 10 * self._scale)
         return path
 
     @staticmethod
@@ -228,11 +213,12 @@ class NodeItem(QGraphicsItem):
 
 
 class FlowChartView(QGraphicsView):
-    """Professional flowchart view — large nodes, high contrast, zoom/fit/reset."""
+    """Professional flowchart view with compile/run integration."""
 
     nodeClicked = Signal(int)
     nodeDoubleClicked = Signal(int, str)
     graphToPython = Signal()
+    compileRequested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -240,39 +226,33 @@ class FlowChartView(QGraphicsView):
         self.setRenderHint(QPainter.TextAntialiasing)
         self.setScene(QGraphicsScene(self))
         self.setDragMode(QGraphicsView.NoDrag)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
         self.setInteractive(True)
-        self.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
         self._graph: FlowGraph | None = None
         self._pan_active = False
         self._pan_start: QPoint | None = None
         self._drag_mode = False
-        self._build_tools()
+        self._current_scale = 1.0
+        self._build_controls()
 
     def wheelEvent(self, event) -> None:
         delta = event.angleDelta().y()
         if delta == 0:
             return
-        factor = 1.1 if delta > 0 else 1.0 / 1.1
+        factor = 1.08 if delta > 0 else 1.0 / 1.08
         self._apply_zoom(factor)
 
     def _apply_zoom(self, factor: float) -> None:
         cur = self.transform()
         new_scale = cur.m11() * factor
-        if 0.2 <= new_scale <= 6.0:
+        if MIN_SCALE <= new_scale <= MAX_SCALE:
             self.scale(factor, factor)
+            self._current_scale = new_scale
 
     def mousePressEvent(self, event) -> None:
-        if event.button() == Qt.MouseButton.RightButton:
-            self._pan_active = True
-            self._pan_start = event.position().toPoint()
-            self._drag_mode = True
-            self.setCursor(Qt.CursorShape.ClosedHandCursor)
-            event.accept()
-            return
         if event.button() == Qt.MouseButton.LeftButton:
             item = self.itemAt(event.position().toPoint())
             if item is not None and hasattr(item, "node"):
@@ -284,6 +264,20 @@ class FlowChartView(QGraphicsView):
                     self.nodeDoubleClicked.emit(line, code)
                 event.accept()
                 return
+            # Sol tık ile pan
+            self._pan_active = True
+            self._pan_start = event.position().toPoint()
+            self._drag_mode = True
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+            event.accept()
+            return
+        if event.button() == Qt.MouseButton.RightButton:
+            self._pan_active = True
+            self._pan_start = event.position().toPoint()
+            self._drag_mode = True
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+            event.accept()
+            return
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event) -> None:
@@ -322,46 +316,79 @@ class FlowChartView(QGraphicsView):
                 return
         super().mouseDoubleClickEvent(event)
 
-    def _build_tools(self) -> None:
+    def _build_controls(self) -> None:
         from ..resources.icons import icon
 
-        self._tools = QWidget(self)
-        lay = QVBoxLayout(self._tools)
+        self._controls = QWidget(self)
+        lay = QVBoxLayout(self._controls)
         lay.setContentsMargins(6, 6, 6, 6)
         lay.setSpacing(6)
-        for name, slot, tip in (
-            ("zoom_in",  self.zoom_in,  "Yakınlaştır"),
-            ("zoom_out", self.zoom_out, "Uzaklaştır"),
-            ("fit",      self.fit_view, "Sığdır"),
-            ("reset",    self.reset_view,"Sıfırla"),
-            ("code_to_flow", self._to_python, "Flowchart → Python"),
-        ):
-            b = QPushButton()
-            b.setObjectName("Flat")
-            b.setIcon(icon(name, "#c9d1d9", 20))
-            b.setFixedSize(38, 38)
-            b.setCursor(Qt.PointingHandCursor)
-            b.setToolTip(tip)
-            b.clicked.connect(slot)
-            lay.addWidget(b)
-        self._tools.setStyleSheet("""
-            QWidget { background-color: #161b22; border: 1px solid #21262d; border-radius: 8px; }
-            QPushButton#Flat { background-color: transparent; border: none; border-radius: 6px; padding: 6px; }
-            QPushButton#Flat:hover { background-color: #21262d; }
+
+        # Compile/Run button
+        compile_btn = QPushButton("▶ Derle")
+        compile_btn.setObjectName("RunBtn")
+        compile_btn.setFixedHeight(32)
+        compile_btn.setCursor(Qt.PointingHandCursor)
+        compile_btn.clicked.connect(self.compileRequested.emit)
+        lay.addWidget(compile_btn)
+
+        # Zoom controls
+        zoom_in = QToolButton()
+        zoom_in.setObjectName("Flat")
+        ic = icon("zoom_in", "#cccccc", 16)
+        if not ic.isNull():
+            zoom_in.setIcon(ic)
+            zoom_in.setIconSize(QSize(16, 16))
+        zoom_in.setFixedSize(32, 32)
+        zoom_in.setCursor(Qt.PointingHandCursor)
+        zoom_in.setToolTip("Yakınlaştır")
+        zoom_in.clicked.connect(lambda: self._apply_zoom(1.2))
+        lay.addWidget(zoom_in)
+
+        zoom_out = QToolButton()
+        zoom_out.setObjectName("Flat")
+        ic = icon("zoom_out", "#cccccc", 16)
+        if not ic.isNull():
+            zoom_out.setIcon(ic)
+            zoom_out.setIconSize(QSize(16, 16))
+        zoom_out.setFixedSize(32, 32)
+        zoom_out.setCursor(Qt.PointingHandCursor)
+        zoom_out.setToolTip("Uzaklaştır")
+        zoom_out.clicked.connect(lambda: self._apply_zoom(1.0 / 1.2))
+        lay.addWidget(zoom_out)
+
+        fit_btn = QToolButton()
+        fit_btn.setObjectName("Flat")
+        ic = icon("fit", "#cccccc", 16)
+        if not ic.isNull():
+            fit_btn.setIcon(ic)
+            fit_btn.setIconSize(QSize(16, 16))
+        fit_btn.setFixedSize(32, 32)
+        fit_btn.setCursor(Qt.PointingHandCursor)
+        fit_btn.setToolTip("Sığdır")
+        fit_btn.clicked.connect(self.fit_view)
+        lay.addWidget(fit_btn)
+
+        self._controls.setStyleSheet("""
+            QWidget { background-color: #252525; border: 1px solid #3e3e42; border-radius: 6px; }
+            QPushButton#RunBtn { background-color: #107c10; color: #ffffff; border: none; border-radius: 4px; padding: 4px 12px; font-weight: 600; font-size: 12px; }
+            QPushButton#RunBtn:hover { background-color: #0b8a0b; }
+            QToolButton#Flat { background-color: transparent; border: none; border-radius: 4px; padding: 4px; }
+            QToolButton#Flat:hover { background-color: #3e3e42; }
         """)
-        self._tools.setGeometry(self.width() - 52, self.height() - 220, 38, 200)
-        self._tools.show()
+        self._controls.setGeometry(self.width() - 52, self.height() - 200, 38, 180)
+        self._controls.show()
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
-        if hasattr(self, "_tools"):
-            self._tools.setGeometry(self.width() - 52, self.height() - 220, 38, 200)
+        if hasattr(self, "_controls"):
+            self._controls.setGeometry(self.width() - 52, self.height() - 200, 38, 180)
 
     def drawBackground(self, painter, rect) -> None:
         super().drawBackground(painter, rect)
-        painter.fillRect(rect, QColor("#0d1117"))
-        grid = 32
-        pen = QPen(QColor("#161b22"))
+        painter.fillRect(rect, QColor("#1a1a1a"))
+        grid = 24
+        pen = QPen(QColor("#2d2d2d"))
         pen.setWidth(1)
         painter.setPen(pen)
         left = int(rect.left()) - (int(rect.left()) % grid)
@@ -375,8 +402,31 @@ class FlowChartView(QGraphicsView):
         self._graph = graph
         self.scene().clear()
         items: dict[str, NodeItem] = {}
+
+        # Calculate optimal scale based on scene size
+        view_rect = self.viewport().rect()
+        view_w = view_rect.width() - 100
+        view_h = view_rect.height() - 100
+
+        if graph.nodes:
+            xs = [n.x for n in graph.nodes]
+            ys = [n.y for n in graph.nodes]
+            min_x, max_x = min(xs), max(xs)
+            min_y, max_y = min(ys), max(ys)
+            graph_w = max(max_x - min_x, 1)
+            graph_h = max(max_y - min_y, 1)
+
+            scale_x = view_w / (graph_w + 200)
+            scale_y = view_h / (graph_h + 200)
+            optimal_scale = min(scale_x, scale_y, 1.5)
+            optimal_scale = max(MIN_SCALE, min(MAX_SCALE, optimal_scale))
+        else:
+            optimal_scale = 1.0
+
+        self._current_scale = optimal_scale
+
         for n in graph.nodes:
-            item = NodeItem(n)
+            item = NodeItem(n, scale=optimal_scale)
             self.scene().addItem(item)
             items[n.id] = item
 
@@ -387,7 +437,7 @@ class FlowChartView(QGraphicsView):
                 continue
             self._add_edge(src, dst, e.label, e.back)
 
-        r = self.scene().itemsBoundingRect().adjusted(-80, -80, 80, 80)
+        r = self.scene().itemsBoundingRect().adjusted(-60, -60, 60, 60)
         self.scene().setSceneRect(r)
         QTimer.singleShot(50, self.fit_view)
 
@@ -396,44 +446,45 @@ class FlowChartView(QGraphicsView):
             start = QPointF(src.x() + 2, src.y() + src.h / 2)
             end = QPointF(dst.x() + 2, dst.y() - dst.h / 2)
             path = QPainterPath(start)
-            midx = min(start.x(), end.x()) - 80
+            midx = min(start.x(), end.x()) - 60
             ctrl1 = QPointF(midx, start.y())
             ctrl2 = QPointF(midx, end.y())
             path.cubicTo(ctrl1, ctrl2, end)
-            self.scene().addPath(path, QPen(QColor("#6e7681"), 2.0))
-            self._arrow(end, ctrl2, QColor("#6e7681"))
+            self.scene().addPath(path, QPen(QColor("#555555"), 1.8))
+            self._arrow(end, ctrl2, QColor("#555555"))
         else:
             start = QPointF(src.x() + src.w / 2, src.y() + src.h)
             end = QPointF(dst.x() + dst.w / 2, dst.y())
             line = QLineF(start, end)
-            self.scene().addLine(line, QPen(QColor("#6e7681"), 2.0))
-            self._arrow(end, start, QColor("#6e7681"))
+            self.scene().addLine(line, QPen(QColor("#555555"), 1.8))
+            self._arrow(end, start, QColor("#555555"))
         if label:
             mid = (start + end) / 2
             txt = self.scene().addText(label)
-            txt.setDefaultTextColor(QColor("#c9d1d9"))
-            txt.setFont(QFont("Segoe UI", 10, QFont.Weight.Medium))
-            txt.setPos(mid.x() + 8, mid.y() - 10)
+            txt.setDefaultTextColor(QColor("#888888"))
+            txt.setFont(QFont("Segoe UI", 9))
+            txt.setPos(mid.x() + 6, mid.y() - 10)
             txt.setZValue(1)
 
     def _arrow(self, tip: QPointF, from_point: QPointF, color: QColor) -> None:
         angle = math.atan2(tip.y() - from_point.y(), tip.x() - from_point.x())
-        size = 12
+        size = 10
         a1 = angle + math.radians(150)
         a2 = angle - math.radians(150)
         p1 = tip - QPointF(size * math.cos(a1), size * math.sin(a1))
         p2 = tip - QPointF(size * math.cos(a2), size * math.sin(a2))
         poly = QPolygonF([tip, p1, p2])
-        self.scene().addPolygon(poly, QPen(color, 1.6), QBrush(color))
+        self.scene().addPolygon(poly, QPen(color, 1.4), QBrush(color))
 
     def zoom_in(self) -> None:
-        self.scale(1.2, 1.2)
+        self._apply_zoom(1.2)
 
     def zoom_out(self) -> None:
-        self.scale(1 / 1.2, 1 / 1.2)
+        self._apply_zoom(1.0 / 1.2)
 
     def reset_view(self) -> None:
         self.resetTransform()
+        self._current_scale = 1.0
         self.fit_view()
 
     def fit_view(self) -> None:
@@ -447,9 +498,6 @@ class FlowChartView(QGraphicsView):
         from ..core.pytoflow import graph_to_python
         return graph_to_python(self._graph)
 
-    def _to_python(self) -> None:
-        self.graphToPython.emit()
-
     def select_node_by_line(self, line: int) -> None:
         if self._graph is None:
             return
@@ -457,5 +505,5 @@ class FlowChartView(QGraphicsView):
             if hasattr(item, "node") and getattr(item.node, "line", 0) == line:
                 self.scene().clearSelection()
                 item.setSelected(True)
-                self.ensureCursorVisible(item)
+                self.centerOn(item)
                 return

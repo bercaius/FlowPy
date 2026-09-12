@@ -1,4 +1,4 @@
-"""Create new project dialog — professional UX."""
+"""Create new project dialog — professional orange theme."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from ..core.project import Project, Vault
 
 
 class NewProjectDialog(QDialog):
-    """Professional new project creation dialog."""
+    """Professional new project creation dialog with orange theme."""
 
     def __init__(self, vault: Vault, parent=None) -> None:
         super().__init__(parent)
@@ -37,7 +37,7 @@ class NewProjectDialog(QDialog):
         layout.setSpacing(16)
 
         header = QLabel("Yeni Proje Oluştur")
-        header.setStyleSheet("font-size:18px;font-weight:600;color:#f0f6fc;")
+        header.setStyleSheet("font-size:18px;font-weight:600;color:#92400e;")
         layout.addWidget(header)
 
         form = QFormLayout()

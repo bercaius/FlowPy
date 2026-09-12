@@ -1,11 +1,12 @@
-"""Custom title bar — frameless window with min/max/close buttons."""
+"""Custom title bar — clean modern design."""
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QPushButton,
     QWidget,
 )
@@ -14,7 +15,9 @@ from ..resources.icons import icon
 
 
 class TitleBar(QWidget):
-    """Custom frameless window title bar."""
+    """Clean modern title bar with search and theme toggle."""
+
+    searchChanged = Signal(str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -24,23 +27,47 @@ class TitleBar(QWidget):
 
     def _build(self) -> None:
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 0, 8, 0)
-        layout.setSpacing(0)
+        layout.setContentsMargins(16, 0, 8, 0)
+        layout.setSpacing(12)
 
+        # Logo
         self.title_label = QLabel("FlowPy")
         self.title_label.setObjectName("AppTitle")
         layout.addWidget(self.title_label)
+
+        # Search
+        self.search_input = QLineEdit()
+        self.search_input.setObjectName("SearchInput")
+        self.search_input.setPlaceholderText("Ara...")
+        self.search_input.setFixedHeight(30)
+        self.search_input.setFixedWidth(240)
+        self.search_input.textChanged.connect(self.searchChanged)
+        layout.addWidget(self.search_input)
+
         layout.addStretch(1)
 
-        for name, slot, obj in (
-            ("minimize", None, "TitleBtn"),
-            ("maximize", None, "TitleBtn"),
-            ("close", None, "CloseBtn"),
+        # Theme toggle
+        self.theme_btn = QPushButton()
+        self.theme_btn.setObjectName("TitleBtn")
+        self.theme_btn.setIcon(icon("sun", "#ffffff", 14))
+        self.theme_btn.setFixedSize(32, 32)
+        self.theme_btn.setCursor(Qt.PointingHandCursor)
+        self.theme_btn.setToolTip("Tema değiştir")
+        layout.addWidget(self.theme_btn)
+
+        # Window controls
+        for name, obj in (
+            ("minimize", "TitleBtn"),
+            ("maximize", "TitleBtn"),
+            ("close", "CloseBtn"),
         ):
             b = QPushButton()
             b.setObjectName(obj)
-            b.setIcon(icon(name, "#c9d1d9", 14))
-            b.setFixedSize(38, 38)
+            ic = icon(name, "#ffffff", 14)
+            if not ic.isNull():
+                b.setIcon(ic)
+            b.setIconSize(QSize(14, 14))
+            b.setFixedSize(36, 36)
             b.setCursor(Qt.PointingHandCursor)
             layout.addWidget(b)
 

@@ -1,11 +1,4 @@
-"""Application backbone — services, WebSocket bridge, plugin manager integration.
-
-Services singleton wires together:
-- Plugin manager lifecycle
-- WebSocket bridge (JSON-RPC 2.0)
-- Graph notification system
-- Run request handling
-"""
+"""Application backbone — clean services and WebSocket bridge."""
 
 from __future__ import annotations
 
@@ -21,13 +14,12 @@ from PySide6.QtCore import QObject, QTimer, Qt, Signal
 
 from flowpy.core.pytoflow import FlowBuilder, layout_graph
 from flowpy.core.runner import Runner
-from flowpy.plugins.manager import PluginManager
 
 logger = logging.getLogger(__name__)
 
 
 def _server_frame(payload: bytes) -> bytes:
-    """WebSocket sunucu çerçevesi (maskesiz, uzunluk kodlamalı)."""
+    """WebSocket sunucu çerçevesi."""
     n = len(payload)
     if n <= 125:
         return bytes([0x81, n]) + payload
@@ -37,11 +29,7 @@ def _server_frame(payload: bytes) -> bytes:
 
 
 class Bridge(QObject):
-    """WebSocket bridge for external tools (VS Code, etc.).
-
-    stdlib-only socket — PyInstaller uyumlu.
-    JSON-RPC 2.0 protocol.
-    """
+    """WebSocket bridge for external tools."""
 
     message_received = Signal(str)
 
@@ -236,7 +224,6 @@ class Services(QObject):
         port: int = 18809,
     ) -> None:
         super().__init__(parent)
-        self.manager = PluginManager()
         self.bridge = Bridge(host, port)
         self.bridge.message_received.connect(
             self._on_bridge_message, Qt.ConnectionType.DirectConnection
@@ -267,15 +254,12 @@ class Services(QObject):
 
     def start(self) -> None:
         """Start all services."""
-        self.manager.discover()
         self.bridge.start()
         logger.info("Services started")
 
     def stop(self) -> None:
         """Stop all services."""
         self.bridge.stop()
-        for name in list(self.manager.active_plugins):
-            self.manager.deactivate_plugin(name)
         logger.info("Services stopped")
 
     def notify_graph(self, graph: object) -> None:
@@ -287,11 +271,8 @@ class Services(QObject):
         })
         self.bridge.send(payload)
 
-    # ------------------------------------------------------------------
-    # Gerçek dönüştürücü & çalıştırıcı (JSON-RPC ile dış araçlara açılır)
-    # ------------------------------------------------------------------
     def generate_graph(self, field: str = "") -> dict:
-        """Aktif kodu gerçek dönüştürücüden geçirip grafı JSON olarak döndürür."""
+        """Generate graph from active code."""
         code = self._get_code()
         if not code.strip():
             return {"nodes": [], "edges": [], "error": "kod boş"}
@@ -319,7 +300,7 @@ class Services(QObject):
         }
 
     def run_code(self, code: str, cwd: str | None = None) -> None:
-        """Kodu gerçek Python yorumlayıcısı ile çalıştırır (köprü üzerinden)."""
+        """Run code with real Python interpreter."""
         import os
         from pathlib import Path
 
@@ -337,7 +318,7 @@ class Services(QObject):
         self.bridge.send(json.dumps(message))
 
     def _on_bridge_message(self, message: str) -> None:
-        """Handle incoming WebSocket messages (JSON-RPC 2.0)."""
+        """Handle incoming WebSocket messages."""
         try:
             req = json.loads(message)
             method = req.get("method")
@@ -357,16 +338,6 @@ class Services(QObject):
                     "nodes": len(getattr(g, "nodes", [])),
                     "edges": len(getattr(g, "edges", [])),
                 }
-            elif method == "list_plugins":
-                result = list(self.manager.loaded_plugins.keys())
-            elif method == "activate_plugin":
-                name = params if isinstance(params, str) else params.get("name")
-                ok = self.manager.activate_plugin(name) if name else False
-                result = {"success": ok}
-            elif method == "deactivate_plugin":
-                name = params if isinstance(params, str) else params.get("name")
-                self.manager.deactivate_plugin(name)
-                result = {"success": True}
             elif method == "generate_graph":
                 field = params.get("field", "") if isinstance(params, dict) else ""
                 result = self.generate_graph(field)

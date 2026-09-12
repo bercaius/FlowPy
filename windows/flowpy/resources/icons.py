@@ -8,18 +8,21 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QPixmap
 
 _ASSETS = Path(__file__).resolve().parent.parent.parent / "assets"
+_ICONS_DIR = Path(__file__).resolve().parent / "icons"
 
 
-def icon(name: str, color: str = "#c9d1d9", size: int = 18) -> QIcon:
+def icon(name: str, color: str = "#92400e", size: int = 18) -> QIcon:
     """Load an icon by name. Returns a QIcon (empty if not found)."""
     candidates = [
         _ASSETS / f"{name}.png",
         _ASSETS / f"{name}.svg",
-        Path(__file__).parent / "icons" / f"{name}.png",
-        Path(__file__).parent / "icons" / f"{name}.svg",
+        _ICONS_DIR / f"{name}.png",
+        _ICONS_DIR / f"{name}.svg",
     ]
     for path in candidates:
         if path.exists():
+            if path.suffix.lower() == ".svg":
+                return QIcon(str(path))
             pixmap = QPixmap(str(path)).scaled(
                 size, size,
             )
